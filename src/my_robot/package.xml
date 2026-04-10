@@ -3,7 +3,7 @@
 <package format="3">
   <name>my_robot</name>
   <version>0.1.0</version>
-  <description>A simple ROS2 Python publisher that sends "Hello Swarm-X" to /chatter</description>
+  <description>SWARM-X ROS2 package — chatter publisher + ESP32 ultrasonic listener</description>
   <maintainer email="dilip@todo.todo">dilip</maintainer>
   <license>Apache-2.0</license>
 
@@ -13,6 +13,7 @@
   <!-- Runtime dependencies -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
 
   <!-- Testing -->
   <test_depend>ament_copyright</test_depend>
