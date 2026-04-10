@@ -17,7 +17,7 @@ How it works:
       one shared communication channel
 
 Usage:
-    # Run with default 3 robots
+    # Run with default 2 robots
     ros2 run my_robot swarm_multi_publisher
 
     # Run with 5 robots (using ROS2 parameter override)
@@ -43,7 +43,7 @@ class SwarmMultiPublisher(Node):
         # ── Declare a parameter so users can change robot count ──────
         # You can override this at runtime with:
         #   --ros-args -p num_robots:=5
-        self.declare_parameter('num_robots', 3)
+        self.declare_parameter('num_robots', 2)
         self.num_robots = self.get_parameter('num_robots').value
 
         # ── Create the publisher ─────────────────────────────────────
