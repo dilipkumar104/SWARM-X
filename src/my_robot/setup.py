@@ -20,7 +20,7 @@ setup(
     zip_safe=True,
     maintainer='dilip',
     maintainer_email='dilip@todo.todo',
-    description='SWARM-X ROS2 package — chatter publisher + ESP32 ultrasonic listener',
+    description='SWARM-X ROS2 package — swarm status, chatter publisher + ESP32 ultrasonic listener',
     license='Apache-2.0',
     tests_require=['pytest'],
 
@@ -29,12 +29,18 @@ setup(
     # Format:  'executable_name = package.module:function'
     #
     # After building, you can run:
+    #   ros2 run my_robot swarm_publisher
+    #   ros2 run my_robot swarm_subscriber
+    #   ros2 run my_robot swarm_multi_publisher
     #   ros2 run my_robot chatter_publisher
     #   ros2 run my_robot ultrasonic_listener
     # ──────────────────────────────────────────────────────────────
     entry_points={
         'console_scripts': [
-            'chatter_publisher  = my_robot.chatter_publisher:main',
+            'swarm_publisher     = my_robot.swarm_publisher:main',
+            'swarm_subscriber    = my_robot.swarm_subscriber:main',
+            'swarm_multi_publisher = my_robot.swarm_multi_publisher:main',
+            'chatter_publisher   = my_robot.chatter_publisher:main',
             'ultrasonic_listener = my_robot.ultrasonic_listener:main',
         ],
     },
