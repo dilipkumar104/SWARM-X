@@ -648,10 +648,10 @@ ros2 run my_robot swarm_subscriber
 
 | Item | Where to get it |
 |------|----------------|
-| **ESP32 Dev Board** | Amazon, AliExpress, or local electronics store |
-| **HC-SR04 Ultrasonic Sensor** | Amazon, AliExpress (~$2) |
-| **4× Jumper Wires** (Female-to-Male) | Any electronics kit |
-| **USB Cable** (Micro-USB or USB-C) | Depends on your ESP32 board |
+| **ESP32 Dev Board** 
+| **HC-SR04 Ultrasonic Sensor** 
+| **4× Jumper Wires** (Female-to-Male) 
+| **USB Cable** (Micro-USB or USB-C) 
 | **Arduino IDE 2.x** | [arduino.cc/en/software](https://www.arduino.cc/en/software) |
 | **ESP32 Board Support** | Added via Arduino IDE Board Manager |
 | **micro_ros_arduino Library** | [GitHub Releases](https://github.com/micro-ROS/micro_ros_arduino/releases) |
