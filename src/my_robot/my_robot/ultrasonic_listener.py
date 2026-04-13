@@ -5,8 +5,8 @@
 """
 ultrasonic_listener.py — ROS2 Ultrasonic Sensor Listener Node
 
-Subscribes to /ultrasonic/range (sensor_msgs/msg/Range) published by an
-ESP32 running micro-ROS, and provides:
+Subscribes to ultrasonic/range (sensor_msgs/msg/Range) published by an
+ESP32 running micro-ROS or the ultrasonic_simulator node, and provides:
 
   • Connection detection   — logs when ESP32 comes online / goes offline
   • Sensor health          — validates readings and flags out-of-range data
@@ -42,8 +42,8 @@ class UltrasonicListener(Node):
     ROS2 subscriber node for ultrasonic range data from an ESP32.
 
     Topics:
-        Subscribes : /ultrasonic/range   (sensor_msgs/msg/Range)
-        Publishes  : /ultrasonic/status  (std_msgs/msg/String)
+        Subscribes : ultrasonic/range   (sensor_msgs/msg/Range)  [relative]
+        Publishes  : ultrasonic/status  (std_msgs/msg/String)    [relative]
 
     Behaviour:
         1. Detects when the ESP32 first connects (first message received).
@@ -71,13 +71,13 @@ class UltrasonicListener(Node):
         # ── Subscriber: /ultrasonic/range ──────────────────────────────
         self.range_sub = self.create_subscription(
             Range,
-            '/ultrasonic/range',
+            'ultrasonic/range',
             self._range_callback,
             MICRO_ROS_QOS,
         )
 
         # ── Publisher: /ultrasonic/status ──────────────────────────────
-        self.status_pub = self.create_publisher(String, '/ultrasonic/status', 10)
+        self.status_pub = self.create_publisher(String, 'ultrasonic/status', 10)
 
         # ── Watchdog timer — checks connectivity every 1 s ────────────
         self._watchdog_timer = self.create_timer(1.0, self._watchdog_callback)
@@ -85,7 +85,7 @@ class UltrasonicListener(Node):
         # ── Startup banner ─────────────────────────────────────────────
         self.get_logger().info('━' * 60)
         self.get_logger().info('  🤖 SWARM-X Ultrasonic Listener')
-        self.get_logger().info('  Waiting for ESP32 on /ultrasonic/range ...')
+        self.get_logger().info('  Waiting for data on ultrasonic/range ...')
         self.get_logger().info('━' * 60)
 
     # ──────────────────────────────────────────────────────────────────

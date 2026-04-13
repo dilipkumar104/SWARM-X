@@ -12,7 +12,7 @@ to the /swarm_status topic. Each robot publishes a unique message like
 How it works:
     - Uses a ROS2 parameter 'num_robots' (default: 3)
     - Each robot gets its own timer running at 1 Hz
-    - All robots publish to the SAME topic: /swarm_status
+    - All robots publish to the SAME topic: swarm_status (relative)
     - This shows how a real swarm system would work — many robots,
       one shared communication channel
 
@@ -47,7 +47,7 @@ class SwarmMultiPublisher(Node):
         self.num_robots = self.get_parameter('num_robots').value
 
         # ── Create the publisher ─────────────────────────────────────
-        self.publisher_ = self.create_publisher(String, '/swarm_status', 10)
+        self.publisher_ = self.create_publisher(String, 'swarm_status', 10)
 
         # ── Create one timer per robot ───────────────────────────────
         # Each timer fires every 1 second but with a slight offset

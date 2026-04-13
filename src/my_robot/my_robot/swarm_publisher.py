@@ -5,8 +5,9 @@
 """
 swarm_publisher.py — ROS2 Publisher Node for Swarm Status
 
-This node publishes robot status messages to the /swarm_status topic
+This node publishes robot status messages to the swarm_status topic
 every 1 second. It uses the standard std_msgs/msg/String message type.
+Uses relative topic names so ROS2 namespaces (e.g. /robot1/) work automatically.
 
 What this node does:
     1. Creates a ROS2 node named 'swarm_publisher'
@@ -33,7 +34,7 @@ class SwarmPublisher(Node):
 
     Details:
         - Node name : swarm_publisher
-        - Topic     : /swarm_status
+        - Topic     : swarm_status  (relative — respects namespace)
         - Msg type  : std_msgs/msg/String
         - Frequency : 1 Hz (every 1 second)
     """
@@ -44,12 +45,18 @@ class SwarmPublisher(Node):
         # graph. You can see it when you run: ros2 node list
         super().__init__('swarm_publisher')
 
+        # ── Declare parameters ───────────────────────────────────────
+        # robot_name can be overridden at runtime:
+        #   --ros-args -p robot_name:="Dholu"
+        self.declare_parameter('robot_name', 'Robot 1')
+        self.robot_name = self.get_parameter('robot_name').value
+
         # ── Step 2: Create a publisher ───────────────────────────────
         # Arguments:
         #   String           → message type (std_msgs/msg/String)
-        #   '/swarm_status'  → topic name (any node can subscribe to this)
+        #   'swarm_status'   → relative topic (respects ROS2 namespaces)
         #   10               → QoS queue depth (buffers up to 10 messages)
-        self.publisher_ = self.create_publisher(String, '/swarm_status', 10)
+        self.publisher_ = self.create_publisher(String, 'swarm_status', 10)
 
         # ── Step 3: Create a repeating timer ─────────────────────────
         # The timer calls self.timer_callback every 1.0 seconds.
@@ -63,7 +70,7 @@ class SwarmPublisher(Node):
 
         # ── Startup log ──────────────────────────────────────────────
         self.get_logger().info(
-            '🟢 SwarmPublisher started — publishing to /swarm_status every 1s'
+            f'🟢 SwarmPublisher started — {self.robot_name} publishing to swarm_status every 1s'
         )
 
     def timer_callback(self):
@@ -74,7 +81,7 @@ class SwarmPublisher(Node):
 
         # Build the message object
         msg = String()
-        msg.data = 'Robot 1 online'
+        msg.data = f'{self.robot_name} online'
 
         # Publish the message to /swarm_status
         self.publisher_.publish(msg)

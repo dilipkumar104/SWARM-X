@@ -5,8 +5,9 @@
 """
 swarm_subscriber.py — ROS2 Subscriber Node for Swarm Status
 
-This node subscribes to the /swarm_status topic and prints every
+This node subscribes to the swarm_status topic and prints every
 message it receives to the terminal. It uses std_msgs/msg/String.
+Uses relative topic names so ROS2 namespaces (e.g. /robot1/) work automatically.
 
 What this node does:
     1. Creates a ROS2 node named 'swarm_subscriber'
@@ -33,7 +34,7 @@ class SwarmSubscriber(Node):
 
     Details:
         - Node name : swarm_subscriber
-        - Topic     : /swarm_status
+        - Topic     : swarm_status  (relative — respects namespace)
         - Msg type  : std_msgs/msg/String
     """
 
@@ -55,7 +56,7 @@ class SwarmSubscriber(Node):
         # automatically whenever a new message arrives on the topic.
         self.subscription = self.create_subscription(
             String,
-            '/swarm_status',
+            'swarm_status',
             self.listener_callback,
             10,
         )
@@ -68,7 +69,7 @@ class SwarmSubscriber(Node):
 
         # ── Startup log ──────────────────────────────────────────────
         self.get_logger().info(
-            '👂 SwarmSubscriber started — listening on /swarm_status'
+            '👂 SwarmSubscriber started — listening on swarm_status'
         )
 
     def listener_callback(self, msg: String):

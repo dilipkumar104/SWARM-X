@@ -50,15 +50,15 @@ Download from [arduino.cc/en/software](https://www.arduino.cc/en/software) (v2.x
 ### Step 3 — Install micro_ros_arduino Library
 
 1. Download the pre-built library from:
-   - **ROS2 Humble**: [micro_ros_arduino releases](https://github.com/micro-ROS/micro_ros_arduino/releases)
-   - Download the `.zip` for your ROS2 distro (e.g., `micro_ros_arduino-humble-v2.x.x.zip`)
+   - **ROS2 Jazzy**: [micro_ros_arduino releases](https://github.com/micro-ROS/micro_ros_arduino/releases)
+   - Download the `.zip` for your ROS2 distro (e.g., `micro_ros_arduino-jazzy-v2.x.x.zip`)
 2. In Arduino IDE: **Sketch → Include Library → Add .ZIP Library...**
 3. Select the downloaded `.zip`
 
 > **Alternative** — Build from source (advanced):
 > ```bash
 > cd ~/Arduino/libraries
-> git clone -b humble https://github.com/micro-ROS/micro_ros_arduino.git
+> git clone -b jazzy https://github.com/micro-ROS/micro_ros_arduino.git
 > ```
 
 ### Step 4 — Configure Board
@@ -95,12 +95,12 @@ The micro-ROS agent bridges the ESP32's serial communication to the ROS2 DDS net
 
 ```bash
 # Option A — Install from package (recommended)
-sudo apt install ros-humble-micro-ros-agent
+sudo apt install ros-jazzy-micro-ros-agent
 
 # Option B — Build from source
 mkdir -p ~/microros_ws/src
 cd ~/microros_ws/src
-git clone -b humble https://github.com/micro-ROS/micro-ROS-Agent.git
+git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git
 cd ~/microros_ws
 colcon build
 source install/setup.bash

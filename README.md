@@ -1,17 +1,23 @@
-# 🤖 SWARM-X — ROS2 Swarm Robotics Platform
+# 🤖 SWARM-X — ROS2 Jazzy Swarm Robotics Platform
 
-A ROS2 (Humble/Iron/Jazzy) Python workspace for the **SWARM-X** robot swarm project.
+A **ROS2 Jazzy** Python workspace for the **SWARM-X** robot swarm project, featuring a two-robot simulation network (**Dholu** & **Bholu**), ultrasonic sensor integration, and obstacle avoidance.
+
+---
 
 ### What's inside:
 
-| # | Node | Topic | Status |
-|---|------|-------|--------|
-| 1 | **Swarm Publisher** | `/swarm_status` | ✅ NEW |
-| 2 | **Swarm Subscriber** | `/swarm_status` | ✅ NEW |
-| 3 | **Swarm Multi-Publisher** | `/swarm_status` | ✅ NEW (Bonus) |
-| 4 | **Chatter Publisher** | `/chatter` | ✅ Working |
-| 5 | **Ultrasonic Listener** | `/ultrasonic/range` | ✅ Working |
-| 6 | **ESP32 Firmware** | micro-ROS over serial | ✅ Working |
+| # | Package | Node | Topic | Status |
+|---|---------|------|-------|--------|
+| 1 | `my_robot` | **Swarm Publisher** | `swarm_status` | ✅ Working |
+| 2 | `my_robot` | **Swarm Subscriber** | `swarm_status` | ✅ Working |
+| 3 | `my_robot` | **Swarm Multi-Publisher** | `swarm_status` | ✅ Working |
+| 4 | `my_robot` | **Chatter Publisher** | `/chatter` | ✅ Working |
+| 5 | `my_robot` | **Ultrasonic Listener** | `ultrasonic/range` | ✅ Working |
+| 6 | `my_robot` | **Ultrasonic Simulator** | `ultrasonic/range` | ✅ NEW |
+| 7 | `my_robot` | **ESP32 Firmware** | micro-ROS over serial | ✅ Working |
+| 8 | `my_robot_controller` | **Obstacle Avoider** | `scan` → `cmd_vel` | ✅ NEW |
+
+> 💡 All topics use **relative names** so ROS2 namespaces work automatically in multi-robot setups.
 
 ---
 
@@ -19,613 +25,467 @@ A ROS2 (Humble/Iron/Jazzy) Python workspace for the **SWARM-X** robot swarm proj
 
 ```
 SWARM-X/
-└── ros2_ws/                            ← ROS2 workspace root
+└── ros2_ws/                                ← ROS2 workspace root
     ├── .gitignore
-    ├── README.md                       ← 📖 You are here
+    ├── README.md                           ← 📖 You are here
     └── src/
-        └── my_robot/                   ← ROS2 Python package
-            ├── package.xml             # Package manifest (dependencies)
-            ├── setup.py                # Python build config + entry points
-            ├── setup.cfg               # Colcon install paths
+        ├── my_robot/                       ← ROS2 Python package (swarm nodes)
+        │   ├── package.xml
+        │   ├── setup.py
+        │   ├── setup.cfg
+        │   ├── resource/
+        │   │   └── my_robot
+        │   ├── my_robot/                   ← ★ Python source files
+        │   │   ├── __init__.py
+        │   │   ├── swarm_publisher.py          # Publisher  (swarm_status)
+        │   │   ├── swarm_subscriber.py         # Subscriber (swarm_status)
+        │   │   ├── swarm_multi_publisher.py    # Multi-robot publisher
+        │   │   ├── chatter_publisher.py        # Publisher  (/chatter)
+        │   │   ├── ultrasonic_listener.py      # Listener   (ultrasonic/range)
+        │   │   └── ultrasonic_simulator.py     # ★ NEW — Fake sensor data
+        │   ├── launch/
+        │   │   ├── swarm_simulation.launch.py  # ★ NEW — Dholu & Bholu simulation
+        │   │   └── esp32_ultrasonic.launch.py  # ESP32 pipeline launcher
+        │   ├── esp32_firmware/
+        │   │   ├── ultrasonic_publisher.ino    # ESP32 Arduino sketch
+        │   │   └── README.md                   # ESP32 setup guide
+        │   └── test/
+        │       ├── test_copyright.py
+        │       ├── test_flake8.py
+        │       └── test_pep257.py
+        │
+        └── my_robot_controller/            ← ★ NEW package (brain node)
+            ├── package.xml
+            ├── setup.py
+            ├── setup.cfg
             ├── resource/
-            │   └── my_robot            # Ament index marker file
-            ├── my_robot/               # ★ Python source files
-            │   ├── __init__.py
-            │   ├── swarm_publisher.py       # ★ NEW — Publisher  (/swarm_status)
-            │   ├── swarm_subscriber.py      # ★ NEW — Subscriber (/swarm_status)
-            │   ├── swarm_multi_publisher.py # ★ NEW — Multi-robot publisher (Bonus)
-            │   ├── chatter_publisher.py     # Publisher  (/chatter)
-            │   └── ultrasonic_listener.py   # Listener   (/ultrasonic/range)
-            ├── launch/
-            │   └── esp32_ultrasonic.launch.py
-            ├── esp32_firmware/
-            │   ├── ultrasonic_publisher.ino # ESP32 Arduino sketch
-            │   └── README.md               # ESP32 setup guide
-            └── test/
-                ├── test_copyright.py
-                ├── test_flake8.py
-                └── test_pep257.py
+            │   └── my_robot_controller
+            └── my_robot_controller/
+                ├── __init__.py
+                └── obstacle_avoider.py     # ★ LaserScan → cmd_vel brain
 ```
 
 ---
 
-# 📚 COMPLETE STEP-BY-STEP GUIDE
+# 📚 COMPLETE STEP-BY-STEP GUIDE (ROS2 Jazzy)
 
-> This guide walks you through **everything** — from setting up your workspace to running the swarm publisher/subscriber system. Every command is copy-paste ready.
+> This guide walks you through **everything** — from installing ROS2 Jazzy to running the two-robot swarm simulation. Every command is copy-paste ready.
 
 ---
 
-## ✅ Prerequisites (What You Need Before Starting)
+## ✅ Prerequisites
 
 | Requirement | How to check | How to install |
 |-------------|--------------|----------------|
-| **Ubuntu 22.04/24.04** (or WSL2 on Windows) | `lsb_release -a` | [Install WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) |
-| **ROS2 Humble** (or Iron/Jazzy) | `ros2 --version` | [Install ROS2 Humble](https://docs.ros.org/en/humble/Installation.html) |
-| **Python 3.10+** | `python3 --version` | Included with Ubuntu 22.04 |
+| **Ubuntu 24.04 (Noble)** | `lsb_release -a` | [Install WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) or upgrade |
+| **ROS2 Jazzy** | `ros2 --version` | See Step 1 below |
+| **Python 3.12+** | `python3 --version` | Included with Ubuntu 24.04 |
 | **colcon** (build tool) | `colcon --help` | `sudo apt install python3-colcon-common-extensions` |
 | **Git** | `git --version` | `sudo apt install git` |
 
-### Additional tools for ESP32 integration (optional — only needed for Level 3):
+---
 
-| Requirement | Notes |
-|-------------|-------|
-| **Arduino IDE 2.x** | For flashing ESP32 firmware |
-| **micro_ros_arduino** | Library matching your ROS2 distro |
-| **micro-ROS Agent** | `ros-humble-micro-ros-agent` package |
-| **ESP32 Dev Board** | Any variant (DevKitC, NodeMCU-32S, etc.) |
-| **HC-SR04 Sensor** | Ultrasonic range sensor |
+## Step 1 — Install ROS2 Jazzy (If Not Already Installed)
+
+> Skip this step if `ros2 --version` already works.
+
+```bash
+# 1. Enable the Universe repository
+sudo apt install software-properties-common
+sudo add-apt-repository universe
+
+# 2. Add the ROS2 GPG key
+sudo apt update && sudo apt install curl -y
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+  -o /usr/share/keyrings/ros-archive-keyring.gpg
+
+# 3. Add the ROS2 repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+  http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
+  | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# 4. Install ROS2 Jazzy (Desktop = full install with rviz, rqt, etc.)
+sudo apt update
+sudo apt install ros-dev-tools -y
+sudo apt install ros-jazzy-desktop -y
+
+# 5. Install colcon build tool
+sudo apt install python3-colcon-common-extensions -y
+```
 
 ---
 
-## Step 1 — Source ROS2 Installation
+## Step 2 — Source ROS2 Jazzy
 
-**What this does:** Tells your terminal where ROS2 is installed so you can use `ros2` commands.
+**What this does:** Tells your terminal where ROS2 is installed.
 
 ```bash
-source /opt/ros/humble/setup.bash
+source /opt/ros/jazzy/setup.bash
 ```
-
-> 💡 **Replace `humble` with your distro** if you use Iron or Jazzy:
-> ```bash
-> source /opt/ros/iron/setup.bash    # for Iron
-> source /opt/ros/jazzy/setup.bash   # for Jazzy
-> ```
 
 > 🔁 **Make it permanent** (so you don't have to type it every time):
 > ```bash
-> echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+> echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 > source ~/.bashrc
 > ```
 
 ---
 
-## Step 2 — Create the ROS2 Workspace (If Not Already Created)
-
-**What is a workspace?** It's a folder where ROS2 looks for your packages. Think of it as a "project folder" for ROS2.
+## Step 3 — Clone & Build the Workspace
 
 ```bash
-# Create the workspace directory
-mkdir -p ~/ros2_ws/src
+# Clone the repository
+cd ~/
+git clone https://github.com/dilipkumar104/SWARM-X.git
+cd SWARM-X/ros2_ws
 
-# Go into the workspace
-cd ~/ros2_ws
+# Build BOTH packages
+colcon build --packages-select my_robot my_robot_controller
+
+# Source the workspace
+source install/setup.bash
 ```
 
-> ⚠️ **If you already have the SWARM-X project**, you can skip this step. The workspace is at `SWARM-X/ros2_ws/`.
-
----
-
-## Step 3 — Create the ROS2 Package (If Not Already Created)
-
-**What is a package?** It's a self-contained unit of code in ROS2 — like a Python project with a specific structure.
-
-```bash
-cd ~/ros2_ws/src
-
-# Create a Python package named 'my_robot'
-ros2 pkg create --build-type ament_python my_robot
-```
-
-This creates the folder structure:
-```
-src/my_robot/
-├── package.xml       ← Lists dependencies
-├── setup.py          ← Build configuration + entry points
-├── setup.cfg         ← Install paths
-├── resource/
-│   └── my_robot      ← Marker file (don't delete!)
-├── my_robot/
-│   └── __init__.py   ← Python package init
-└── test/
-    └── ...
-```
-
-> ⚠️ **If you cloned the SWARM-X repo**, the package already exists. Skip to Step 4.
-
----
-
-## Step 4 — Add the Publisher Node
-
-**What is a publisher?** A node that SENDS messages to a topic. Other nodes can subscribe to that topic to receive the messages.
-
-Create the file `~/ros2_ws/src/my_robot/my_robot/swarm_publisher.py`:
-
-```python
-#!/usr/bin/env python3
-"""
-swarm_publisher.py — Publishes "Robot 1 online" to /swarm_status every 1 second.
-"""
-
-import rclpy                        # ROS2 Python client library
-from rclpy.node import Node         # Base class for ROS2 nodes
-from std_msgs.msg import String     # Standard string message type
-
-
-class SwarmPublisher(Node):
-    """Publishes robot status messages to /swarm_status."""
-
-    def __init__(self):
-        # Initialize the node with name 'swarm_publisher'
-        super().__init__('swarm_publisher')
-
-        # Create a publisher on topic '/swarm_status'
-        # String = message type, 10 = queue size
-        self.publisher_ = self.create_publisher(String, '/swarm_status', 10)
-
-        # Create a timer that fires every 1 second
-        self.timer = self.create_timer(1.0, self.timer_callback)
-
-        # Message counter
-        self.count = 0
-
-        self.get_logger().info(
-            '🟢 SwarmPublisher started — publishing to /swarm_status every 1s'
-        )
-
-    def timer_callback(self):
-        """Called every 1 second. Publishes the status message."""
-        msg = String()
-        msg.data = 'Robot 1 online'
-        self.publisher_.publish(msg)
-        self.count += 1
-        self.get_logger().info(f'[{self.count}] Publishing: "{msg.data}"')
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = SwarmPublisher()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().info('Shutting down.')
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
-```
-
-### 🔍 Code Explained (Line by Line):
-
-| Line | What it does |
-|------|-------------|
-| `import rclpy` | Imports the ROS2 Python library |
-| `from rclpy.node import Node` | Imports the base class for creating nodes |
-| `from std_msgs.msg import String` | Imports the standard String message type |
-| `super().__init__('swarm_publisher')` | Creates a node named "swarm_publisher" |
-| `self.create_publisher(String, '/swarm_status', 10)` | Creates a publisher that sends String messages to /swarm_status |
-| `self.create_timer(1.0, self.timer_callback)` | Calls `timer_callback` every 1.0 second |
-| `msg.data = 'Robot 1 online'` | Sets the message content |
-| `self.publisher_.publish(msg)` | Sends the message to the topic |
-| `rclpy.init()` | Starts the ROS2 system |
-| `rclpy.spin(node)` | Keeps the node alive (blocks until Ctrl+C) |
-
----
-
-## Step 5 — Add the Subscriber Node
-
-**What is a subscriber?** A node that LISTENS for messages on a topic. When a message arrives, it calls a "callback" function.
-
-Create the file `~/ros2_ws/src/my_robot/my_robot/swarm_subscriber.py`:
-
-```python
-#!/usr/bin/env python3
-"""
-swarm_subscriber.py — Subscribes to /swarm_status and prints messages.
-"""
-
-import rclpy
-from rclpy.node import Node
-from std_msgs.msg import String
-
-
-class SwarmSubscriber(Node):
-    """Listens for robot status messages on /swarm_status."""
-
-    def __init__(self):
-        super().__init__('swarm_subscriber')
-
-        # Subscribe to '/swarm_status' topic
-        # When a message arrives, call self.listener_callback
-        self.subscription = self.create_subscription(
-            String,
-            '/swarm_status',
-            self.listener_callback,
-            10,
-        )
-        self.count = 0
-        self.get_logger().info(
-            '👂 SwarmSubscriber started — listening on /swarm_status'
-        )
-
-    def listener_callback(self, msg: String):
-        """Called every time a message arrives on /swarm_status."""
-        self.count += 1
-        self.get_logger().info(f'[{self.count}] Received: "{msg.data}"')
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = SwarmSubscriber()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().info('Shutting down.')
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
-```
-
-### 🔍 Key Difference from Publisher:
-
-| Publisher | Subscriber |
-|-----------|-----------|
-| Uses `create_publisher()` | Uses `create_subscription()` |
-| Uses a **timer** to send messages at a fixed rate | Uses a **callback** that fires when a message arrives |
-| Calls `publisher_.publish(msg)` | Receives `msg` as a function parameter |
-
----
-
-## Step 6 — Update `setup.py` (Register the Nodes)
-
-**Why?** ROS2 uses `setup.py` to know which Python files are executable nodes. Without this, `ros2 run` won't find your nodes.
-
-Open `~/ros2_ws/src/my_robot/setup.py` and make sure it looks like this:
-
-```python
-import os
-from glob import glob
-from setuptools import find_packages, setup
-
-package_name = 'my_robot'
-
-setup(
-    name=package_name,
-    version='0.1.0',
-    packages=find_packages(exclude=['test']),
-    data_files=[
-        ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
-    ],
-    install_requires=['setuptools'],
-    zip_safe=True,
-    maintainer='dilip',
-    maintainer_email='dilip@todo.todo',
-    description='SWARM-X ROS2 package — swarm status, chatter publisher + ESP32 ultrasonic listener',
-    license='Apache-2.0',
-    tests_require=['pytest'],
-    entry_points={
-        'console_scripts': [
-            # ── Swarm Status Nodes (NEW) ─────────────────────────
-            'swarm_publisher      = my_robot.swarm_publisher:main',
-            'swarm_subscriber     = my_robot.swarm_subscriber:main',
-            'swarm_multi_publisher = my_robot.swarm_multi_publisher:main',
-            # ── Existing Nodes ───────────────────────────────────
-            'chatter_publisher    = my_robot.chatter_publisher:main',
-            'ultrasonic_listener  = my_robot.ultrasonic_listener:main',
-        ],
-    },
-)
-```
-
-### 🔍 Entry Points Explained:
-
-```
-'swarm_publisher = my_robot.swarm_publisher:main'
- ↑                 ↑                         ↑
- executable name   package.module            function to call
- (what you type    (file location)           (entry point)
-  after ros2 run)
-```
-
----
-
-## Step 7 — Verify `package.xml` (Dependencies)
-
-Open `~/ros2_ws/src/my_robot/package.xml` and ensure these dependencies are listed:
-
-```xml
-<!-- Runtime dependencies -->
-<exec_depend>rclpy</exec_depend>
-<exec_depend>std_msgs</exec_depend>
-```
-
-> ✅ These should already be present in the SWARM-X project. `rclpy` is the ROS2 Python library, and `std_msgs` provides the `String` message type.
-
----
-
-## Step 8 — Build the Package
-
-**What does building do?** It compiles/installs your Python package so ROS2 can find and run your nodes.
-
-```bash
-# Go to the workspace root
-cd ~/ros2_ws
-
-# Build only our package (faster than building everything)
-colcon build --packages-select my_robot
-```
-
-**Expected output:**
+> 🔁 **Make sourcing permanent:**
+> ```bash
+> echo "source ~/SWARM-X/ros2_ws/install/setup.bash" >> ~/.bashrc
+> source ~/.bashrc
+> ```
+
+**Expected build output:**
 ```
 Starting >>> my_robot
-Finished <<< my_robot [1.23s]
+Starting >>> my_robot_controller
+Finished <<< my_robot [1.2s]
+Finished <<< my_robot_controller [1.1s]
 
-Summary: 1 package finished [1.45s]
+Summary: 2 packages finished [1.5s]
 ```
 
-> ⚠️ **If you see errors:**
-> - `SetuptoolsDeprecationWarning` → This is just a warning, not an error. It still works.
-> - `package.xml not found` → Make sure you're in the `ros2_ws` directory, not `ros2_ws/src`.
-
----
-
-## Step 9 — Source the Workspace
-
-**Why?** After building, you need to tell your terminal about the newly built package.
-
-```bash
-source ~/ros2_ws/install/setup.bash
-```
-
-> 🔁 **Make it permanent:**
+> ⚠️ **IMPORTANT:** You must source BOTH ROS2 AND your workspace in every terminal:
 > ```bash
-> echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
-> source ~/.bashrc
-> ```
-
-> ⚠️ **IMPORTANT:** You must source BOTH the ROS2 installation AND your workspace:
-> ```bash
-> source /opt/ros/humble/setup.bash        # ROS2 itself
-> source ~/ros2_ws/install/setup.bash      # Your workspace
+> source /opt/ros/jazzy/setup.bash
+> source ~/SWARM-X/ros2_ws/install/setup.bash
 > ```
 
 ---
 
-## Step 10 — Run the Publisher (Terminal 1)
+## Step 4 — If Workspace Already Exists
 
-Open a terminal and run:
+If you already have the workspace and just need to update:
 
 ```bash
-# Source the workspace (if not in .bashrc already)
-source /opt/ros/humble/setup.bash
-source ~/ros2_ws/install/setup.bash
+cd ~/SWARM-X/ros2_ws
 
-# Run the swarm publisher
-ros2 run my_robot swarm_publisher
+# Clean old builds (if switching from Humble)
+rm -rf build/ install/ log/
+
+# Rebuild everything fresh for Jazzy
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select my_robot my_robot_controller
+source install/setup.bash
+```
+
+---
+
+# 🚀 RUNNING THE TWO-ROBOT SIMULATION (Dholu & Bholu)
+
+This is the main feature — a complete two-robot swarm simulation that runs with a **single command**.
+
+## What gets launched:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│          SWARM-X Two-Robot Simulation Network                │
+│                                                              │
+│  /dholu/ namespace                /bholu/ namespace          │
+│  ┌──────────────────────┐       ┌──────────────────────┐    │
+│  │ swarm_publisher       │       │ swarm_publisher       │    │
+│  │ → /dholu/swarm_status │       │ → /bholu/swarm_status │    │
+│  │                       │       │                       │    │
+│  │ ultrasonic_simulator  │       │ ultrasonic_simulator  │    │
+│  │ → /dholu/ultra.../range│      │ → /bholu/ultra.../range│   │
+│  │                       │       │                       │    │
+│  │ ultrasonic_listener   │       │ ultrasonic_listener   │    │
+│  │ ← /dholu/ultra.../range│      │ ← /bholu/ultra.../range│   │
+│  └──────────────────────┘       └──────────────────────┘    │
+│                                                              │
+│  Central Monitors:                                           │
+│    /dholu/swarm_monitor  ← listens to /dholu/swarm_status   │
+│    /bholu/swarm_monitor  ← listens to /bholu/swarm_status   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Launch the simulation:
+
+```bash
+# Source (if not in .bashrc)
+source /opt/ros/jazzy/setup.bash
+source ~/SWARM-X/ros2_ws/install/setup.bash
+
+# 🚀 Launch both robots with ONE command
+ros2 launch my_robot swarm_simulation.launch.py
 ```
 
 **Expected output:**
 ```
-[INFO] [swarm_publisher]: 🟢 SwarmPublisher started — publishing to /swarm_status every 1s
-[INFO] [swarm_publisher]: [1] Publishing: "Robot 1 online"
-[INFO] [swarm_publisher]: [2] Publishing: "Robot 1 online"
-[INFO] [swarm_publisher]: [3] Publishing: "Robot 1 online"
+[INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[INFO]   🤖 SWARM-X Two-Robot Simulation
+[INFO]   Robots: Dholu & Bholu
+[INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[INFO]   🚀 Launching Dholu in /dholu/ namespace...
+[INFO]   🚀 Launching Bholu in /bholu/ namespace...
+[INFO] 🟢 SwarmPublisher started — Dholu publishing to swarm_status every 1s
+[INFO] 🟢 SwarmPublisher started — Bholu publishing to swarm_status every 1s
+[INFO] 🧪 Ultrasonic SIMULATOR (no hardware needed)
+[INFO] 🤖 SWARM-X Ultrasonic Listener
 ...
 ```
 
-> 📌 **Leave this terminal running!** The publisher must be active for the subscriber to receive messages.
-
----
-
-## Step 11 — Run the Subscriber (Terminal 2)
-
-Open a **NEW terminal** (don't close Terminal 1!) and run:
+## Verify the simulation (new terminal):
 
 ```bash
-# Source the workspace (if not in .bashrc already)
-source /opt/ros/humble/setup.bash
-source ~/ros2_ws/install/setup.bash
+source /opt/ros/jazzy/setup.bash
+source ~/SWARM-X/ros2_ws/install/setup.bash
 
-# Run the swarm subscriber
-ros2 run my_robot swarm_subscriber
-```
-
-**Expected output:**
-```
-[INFO] [swarm_subscriber]: 👂 SwarmSubscriber started — listening on /swarm_status
-[INFO] [swarm_subscriber]: [1] Received: "Robot 1 online"
-[INFO] [swarm_subscriber]: [2] Received: "Robot 1 online"
-[INFO] [swarm_subscriber]: [3] Received: "Robot 1 online"
-...
-```
-
-> 🎉 **SUCCESS!** If you see "Received" messages in Terminal 2, the publisher and subscriber are communicating!
-
----
-
-## Step 12 — Verify Everything Works
-
-### ✅ Check 1: List active nodes
-
-Open a **third terminal**:
-
-```bash
-source /opt/ros/humble/setup.bash
-source ~/ros2_ws/install/setup.bash
-
+# List all active nodes
 ros2 node list
 ```
 
-**Expected output:**
+**Expected:**
 ```
-/swarm_publisher
-/swarm_subscriber
+/dholu/swarm_publisher
+/dholu/ultrasonic_simulator
+/dholu/ultrasonic_listener
+/dholu/swarm_monitor
+/bholu/swarm_publisher
+/bholu/ultrasonic_simulator
+/bholu/ultrasonic_listener
+/bholu/swarm_monitor
 ```
-
-### ✅ Check 2: List active topics
 
 ```bash
+# List all active topics
 ros2 topic list
 ```
 
-**Expected output (should include):**
+**Expected:**
 ```
-/swarm_status
+/dholu/swarm_status
+/dholu/ultrasonic/range
+/dholu/ultrasonic/status
+/bholu/swarm_status
+/bholu/ultrasonic/range
+/bholu/ultrasonic/status
 ```
-
-### ✅ Check 3: Inspect the topic
 
 ```bash
-ros2 topic info /swarm_status
-```
+# Echo a specific robot's status
+ros2 topic echo /dholu/swarm_status
 
-**Expected output:**
-```
-Type: std_msgs/msg/String
-Publisher count: 1
-Subscription count: 1
-```
-
-### ✅ Check 4: Echo the topic directly
-
-```bash
-ros2 topic echo /swarm_status
-```
-
-**Expected output:**
-```yaml
-data: Robot 1 online
----
-data: Robot 1 online
----
-```
-
-### ✅ Check 5: Check publishing frequency
-
-```bash
-ros2 topic hz /swarm_status
-```
-
-**Expected output:**
-```
-average rate: 1.000
+# Echo Bholu's ultrasonic data
+ros2 topic echo /bholu/ultrasonic/range
 ```
 
 ---
 
-## Step 13 — Stop Everything
+# 🧪 TESTING THE ULTRASONIC SENSOR
 
-Press `Ctrl+C` in each terminal to stop the nodes.
+## Option A — Without Hardware (Simulator)
 
----
-
-# 🌟 BONUS: Multi-Robot Publisher
-
-## How to Extend for Multiple Robots
-
-The `swarm_multi_publisher` node simulates multiple robots — all publishing to the same `/swarm_status` topic.
-
-### Run with default 3 robots:
+You can test the full ultrasonic pipeline **without any ESP32 or sensor hardware**:
 
 ```bash
-ros2 run my_robot swarm_multi_publisher
+# Terminal 1: Start the ultrasonic simulator
+ros2 run my_robot ultrasonic_simulator
+
+# Terminal 2: Start the ultrasonic listener
+ros2 run my_robot ultrasonic_listener
 ```
 
-**Expected output:**
+**Expected output (listener):**
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  🤖 SWARM-X Multi-Robot Publisher
-  Simulating 3 robots on /swarm_status
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[Robot 1 | msg #1] Publishing: "Robot 1 online"
-[Robot 2 | msg #1] Publishing: "Robot 2 online"
-[Robot 3 | msg #1] Publishing: "Robot 3 online"
-[Robot 1 | msg #2] Publishing: "Robot 1 online"
+[INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[INFO]   🤖 SWARM-X Ultrasonic Listener
+[INFO]   Waiting for data on ultrasonic/range ...
+[INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[INFO]   ✅ ESP32 CONNECTED — receiving sensor data
+[INFO] [1] 🔴 DANGER: 2.0 cm — Object VERY close!
+[INFO] [2] 🔴 DANGER: 7.0 cm — Object VERY close!
+[INFO] [3] 🟡 WARNING: 12.0 cm — Object nearby
+[INFO] [4] 🟡 WARNING: 17.0 cm — Object nearby
 ...
+[INFO] [8] 🟢 CLEAR: 37.0 cm
+[INFO] [9] 🟢 CLEAR: 42.0 cm
 ```
 
-### Run with 5 robots:
+The simulator sweeps the distance from 2cm → 400cm → 2cm in a triangle wave, exercising all zones:
+- 🔴 **DANGER** (< 10 cm)
+- 🟡 **WARNING** (< 30 cm)
+- 🟢 **CLEAR** (≥ 30 cm)
+
+## Option B — With ESP32 Hardware
 
 ```bash
-ros2 run my_robot swarm_multi_publisher --ros-args -p num_robots:=5
+# Terminal 1: Start micro-ROS Agent
+ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0 -b 115200
+
+# Terminal 2: Run ultrasonic listener
+ros2 run my_robot ultrasonic_listener
+
+# Terminal 3 (optional): Echo raw data
+ros2 topic echo /ultrasonic/range
 ```
 
-### Subscribe to see all robots:
+> 📎 See the [ESP32 Firmware README](src/my_robot/esp32_firmware/README.md) for wiring and flashing instructions.
 
-In another terminal:
+---
+
+# 🧠 OBSTACLE AVOIDER (Brain Node)
+
+The `obstacle_avoider` node is the central "brain" that subscribes to laser scan data and publishes velocity commands.
+
+## Architecture:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                   obstacle_avoider (Brain)                    │
+│                                                              │
+│   LISTENER (Subscriber)         TALKER (Publisher)            │
+│   ┌──────────────────┐         ┌──────────────────┐         │
+│   │ /scan            │         │ /cmd_vel          │         │
+│   │ LaserScan        │ ─────►  │ Twist             │         │
+│   │ (sensor data in) │  logic  │ (motor cmds out)  │         │
+│   └──────────────────┘         └──────────────────┘         │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Logic:
+
+| Condition | Action | Linear X | Angular Z |
+|-----------|--------|----------|-----------|
+| Path clear (all ranges > 15 cm) | Move forward | 0.22 m/s | 0.0 |
+| Obstacle detected (any range ≤ 15 cm) | **STOP** | 0.0 | 0.0 |
+
+## Build & Run:
 
 ```bash
+# Build the controller package
+cd ~/SWARM-X/ros2_ws
+colcon build --packages-select my_robot_controller
+source install/setup.bash
+
+# Run the obstacle avoider
+ros2 run my_robot_controller obstacle_avoider
+```
+
+**Expected output:**
+```
+[INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[INFO]   🧠 SWARM-X Obstacle Avoider (Brain Node)
+[INFO]   Threshold : 15 cm
+[INFO]   Speed     : 0.22 m/s
+[INFO]   Listening : scan  (LaserScan)
+[INFO]   Publishing: cmd_vel (Twist)
+[INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+## Dependencies added:
+
+**`package.xml`** — these lines are required:
+```xml
+<exec_depend>rclpy</exec_depend>
+<exec_depend>sensor_msgs</exec_depend>
+<exec_depend>geometry_msgs</exec_depend>
+```
+
+**`setup.py`** — entry point:
+```python
+'console_scripts': [
+    'obstacle_avoider = my_robot_controller.obstacle_avoider:main',
+],
+```
+
+## Custom parameters:
+
+```bash
+# Change threshold to 20 cm
+ros2 run my_robot_controller obstacle_avoider --ros-args -p obstacle_threshold:=0.20
+
+# Change forward speed to 0.5 m/s
+ros2 run my_robot_controller obstacle_avoider --ros-args -p forward_speed:=0.5
+```
+
+---
+
+# 🔌 RUNNING INDIVIDUAL NODES
+
+## Swarm Publisher (Terminal 1)
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/SWARM-X/ros2_ws/install/setup.bash
+
+# Run with default name
+ros2 run my_robot swarm_publisher
+
+# Or specify a robot name
+ros2 run my_robot swarm_publisher --ros-args -p robot_name:="Dholu"
+```
+
+## Swarm Subscriber (Terminal 2)
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/SWARM-X/ros2_ws/install/setup.bash
+
 ros2 run my_robot swarm_subscriber
 ```
 
-**Expected output:**
+**Expected:** Subscriber prints `Received: "Dholu online"` messages.
+
+## Chatter Publisher
+
+```bash
+ros2 run my_robot chatter_publisher
 ```
-[1] Received: "Robot 1 online"
-[2] Received: "Robot 2 online"
-[3] Received: "Robot 3 online"
-[4] Received: "Robot 1 online"
-[5] Received: "Robot 2 online"
-...
+
+## Multi-Robot Publisher (Simulates Multiple Robots)
+
+```bash
+# Default 2 robots
+ros2 run my_robot swarm_multi_publisher
+
+# Override to 5 robots
+ros2 run my_robot swarm_multi_publisher --ros-args -p num_robots:=5
 ```
 
 ---
 
-# 🔌 ESP32 Integration Guide
+# 🔌 ESP32 Integration Guide (Jazzy)
 
-## How the ESP32 Connects to This System
+## How the ESP32 Connects
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     SWARM-X Architecture                        │
-│                                                                 │
-│  ┌──────────────┐    USB Serial    ┌──────────────────────┐    │
-│  │   ESP32 +    │ ───────────────► │  micro-ROS Agent     │    │
-│  │   HC-SR04    │   115200 baud    │  (bridges serial     │    │
-│  │   Sensor     │                  │   to ROS2 DDS)       │    │
-│  └──────────────┘                  └────────┬─────────────┘    │
-│                                             │                   │
-│                                    /ultrasonic/range            │
-│                                             │                   │
-│                                    ┌────────▼─────────────┐    │
-│                                    │ ultrasonic_listener   │    │
-│                                    │ (Python ROS2 node)    │    │
-│                                    └────────┬─────────────┘    │
-│                                             │                   │
-│                                    /ultrasonic/status           │
-│                                             │                   │
-│  ┌──────────────┐ /swarm_status   ┌────────▼─────────────┐    │
-│  │   swarm      │ ◄──────────────►│  (future: decision   │    │
-│  │  subscriber  │                 │   making node)        │    │
-│  └──────────────┘                 └──────────────────────┘    │
-│                                                                 │
-│  ┌──────────────┐ /swarm_status                                │
-│  │   swarm      │ ──────────────► All subscribers               │
-│  │  publisher   │                                               │
-│  └──────────────┘                                               │
+│                     SWARM-X Architecture                         │
+│                                                                  │
+│  ┌──────────────┐    USB Serial    ┌──────────────────────┐     │
+│  │   ESP32 +    │ ───────────────► │  micro-ROS Agent     │     │
+│  │   HC-SR04    │   115200 baud    │  (bridges serial     │     │
+│  │   Sensor     │                  │   to ROS2 DDS)       │     │
+│  └──────────────┘                  └────────┬─────────────┘     │
+│                                             │                    │
+│                                    ultrasonic/range              │
+│                                             │                    │
+│                                    ┌────────▼─────────────┐     │
+│                                    │ ultrasonic_listener   │     │
+│                                    │ (Python ROS2 node)    │     │
+│                                    └──────────────────────┘     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## 🔧 ESP32 Hardware Wiring (HC-SR04 → ESP32)
+## Hardware Wiring (HC-SR04 → ESP32)
 
 ```
     HC-SR04                ESP32
@@ -644,34 +504,37 @@ ros2 run my_robot swarm_subscriber
                      GND
 ```
 
-### What you need to buy/download for ESP32:
+## Install micro-ROS Agent (Jazzy)
 
-| Item | Where to get it |
-|------|----------------|
-| **ESP32 Dev Board** 
-| **HC-SR04 Ultrasonic Sensor** 
-| **4× Jumper Wires** (Female-to-Male) 
-| **USB Cable** (Micro-USB or USB-C) 
-| **Arduino IDE 2.x** | [arduino.cc/en/software](https://www.arduino.cc/en/software) |
-| **ESP32 Board Support** | Added via Arduino IDE Board Manager |
-| **micro_ros_arduino Library** | [GitHub Releases](https://github.com/micro-ROS/micro_ros_arduino/releases) |
-| **micro-ROS Agent (PC side)** | `sudo apt install ros-humble-micro-ros-agent` |
+```bash
+# Option A — Install from package (recommended)
+sudo apt install ros-jazzy-micro-ros-agent
 
-### Flash the ESP32:
+# Option B — Build from source
+mkdir -p ~/microros_ws/src
+cd ~/microros_ws/src
+git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git
+cd ~/microros_ws
+colcon build
+source install/setup.bash
+```
 
-1. Install **Arduino IDE 2.x**
+## Flash the ESP32
+
+1. Install **Arduino IDE 2.x** from [arduino.cc/en/software](https://www.arduino.cc/en/software)
 2. **File → Preferences** → Add ESP32 board URL:
    ```
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
 3. **Tools → Board → Boards Manager** → Search "esp32" → Install
-4. **Sketch → Include Library → Add .ZIP Library** → Select `micro_ros_arduino` zip
-5. Open `esp32_firmware/ultrasonic_publisher.ino`
-6. **Tools → Board** → `ESP32 Dev Module`
-7. **Tools → Port** → Select your port (COM3 on Windows, /dev/ttyUSB0 on Linux)
-8. Click **Upload** ▶
+4. Download `micro_ros_arduino` Jazzy release from [GitHub](https://github.com/micro-ROS/micro_ros_arduino/releases)
+5. **Sketch → Include Library → Add .ZIP Library** → Select the zip
+6. Open `esp32_firmware/ultrasonic_publisher.ino`
+7. **Tools → Board** → `ESP32 Dev Module`
+8. **Tools → Port** → Select your port
+9. Click **Upload** ▶
 
-### Run with ESP32:
+## Run with ESP32
 
 ```bash
 # Terminal 1: Start micro-ROS Agent
@@ -684,95 +547,58 @@ ros2 run my_robot ultrasonic_listener
 ros2 topic echo /ultrasonic/range
 ```
 
-### WSL2 Users — Forward USB to WSL:
+## Launch file (one-command start):
+
+```bash
+ros2 launch my_robot esp32_ultrasonic.launch.py
+
+# Custom serial port:
+ros2 launch my_robot esp32_ultrasonic.launch.py serial_port:=/dev/ttyACM0
+```
+
+## WSL2 Users — Forward USB
 
 ```powershell
 # In PowerShell (as Administrator):
-winget install usbipd           # Install once
-usbipd list                     # Find ESP32 bus ID (e.g., 1-3)
-usbipd bind --busid <BUS_ID>   # Bind the device
-usbipd attach --wsl --busid <BUS_ID>  # Forward to WSL
+winget install usbipd
+usbipd list                        # Find ESP32 bus ID (e.g., 1-3)
+usbipd bind --busid <BUS_ID>
+usbipd attach --wsl --busid <BUS_ID>
 ```
 
-Then in your WSL2 terminal:
+Then in WSL2:
 ```bash
 ls /dev/ttyUSB*    # Should show /dev/ttyUSB0
 ```
 
 ---
 
-## 🔀 WiFi Mode (Future Upgrade)
-
-To switch from USB Serial to **WiFi UDP**:
-
-### Firmware change (in `ultrasonic_publisher.ino`):
-
-```cpp
-// Replace this line in setup():
-set_microros_transports();
-
-// With:
-set_microros_wifi_transports("YOUR_WIFI_SSID", "YOUR_PASSWORD", "192.168.1.100", 8888);
-//                            ↑ WiFi name       ↑ WiFi pass     ↑ PC's IP         ↑ Port
-```
-
-### Agent change:
-
-```bash
-ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
-```
-
-> **Finding your PC's IP:**
-> ```bash
-> hostname -I   # Linux
-> ipconfig      # Windows
-> ```
-
----
-
-## 🚀 Launch File (One-Command Start for ESP32)
-
-```bash
-# Default (uses /dev/ttyUSB0)
-ros2 launch my_robot esp32_ultrasonic.launch.py
-
-# Custom serial port
-ros2 launch my_robot esp32_ultrasonic.launch.py serial_port:=/dev/ttyACM0
-```
-
----
-
-# 💡 How This Fits Into a Swarm Robotics System
+# 💡 Full Swarm Architecture (Future Vision)
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│              Full Swarm Architecture (Future)                   │
+│              Full Swarm Architecture                            │
 │                                                                │
-│   Robot 1 ──►  /swarm_status  ◄── swarm_subscriber            │
-│   Robot 2 ──►  /swarm_status       (monitors all robots)      │
-│   Robot 3 ──►  /swarm_status                                   │
+│   Dholu ──►  /dholu/swarm_status   ◄── swarm_monitor          │
+│   Bholu ──►  /bholu/swarm_status       (monitors all robots)  │
 │                                                                │
 │   Each robot also publishes:                                    │
-│     /robot_1/ultrasonic/range   ← obstacle detection           │
-│     /robot_1/cmd_vel            ← movement commands            │
-│     /robot_1/battery            ← battery level                │
+│     /dholu/ultrasonic/range    ← obstacle detection            │
+│     /dholu/cmd_vel             ← movement commands             │
+│     /dholu/scan                ← lidar data                    │
 │                                                                │
-│   Central Coordinator:                                          │
-│     - Subscribes to all /swarm_status topics                   │
+│   Brain Node (per robot):                                       │
+│     obstacle_avoider                                            │
+│     - Subscribes to /robot/scan                                │
+│     - Publishes to /robot/cmd_vel                              │
+│     - Threshold: 15 cm → STOP                                 │
+│                                                                │
+│   Central Coordinator (future):                                 │
+│     - Subscribes to all /*/swarm_status topics                 │
 │     - Makes decisions (e.g., avoid collision)                  │
 │     - Publishes commands to individual robots                  │
 └────────────────────────────────────────────────────────────────┘
 ```
-
-### Next steps for a real swarm:
-
-| Feature | Topic | Message Type |
-|---------|-------|-------------|
-| Robot position | `/robot_N/pose` | `geometry_msgs/msg/Pose` |
-| Movement commands | `/robot_N/cmd_vel` | `geometry_msgs/msg/Twist` |
-| Obstacle detection | `/robot_N/ultrasonic/range` | `sensor_msgs/msg/Range` |
-| Battery status | `/robot_N/battery` | `std_msgs/msg/Float32` |
-| Formation control | `/swarm/formation` | Custom message |
 
 ---
 
@@ -786,20 +612,20 @@ ros2 node list
 ros2 topic list
 
 # Check publishing frequency
-ros2 topic hz /swarm_status
+ros2 topic hz /dholu/swarm_status
 
 # Inspect topic type and publishers
-ros2 topic info /swarm_status --verbose
+ros2 topic info /dholu/swarm_status --verbose
 
 # Echo raw topic data
-ros2 topic echo /swarm_status
+ros2 topic echo /bholu/ultrasonic/range
 
 # Check node details
-ros2 node info /swarm_publisher
-ros2 node info /swarm_subscriber
+ros2 node info /dholu/swarm_publisher
+ros2 node info /bholu/ultrasonic_listener
 
 # Publish a test message from the command line
-ros2 topic pub /swarm_status std_msgs/msg/String "{data: 'Robot 99 online'}" --once
+ros2 topic pub /dholu/swarm_status std_msgs/msg/String "{data: 'Dholu test'}" --once
 ```
 
 ---
@@ -807,8 +633,8 @@ ros2 topic pub /swarm_status std_msgs/msg/String "{data: 'Robot 99 online'}" --o
 # 🧪 Run Tests
 
 ```bash
-cd ~/ros2_ws
-colcon test --packages-select my_robot
+cd ~/SWARM-X/ros2_ws
+colcon test --packages-select my_robot my_robot_controller
 colcon test-result --verbose
 ```
 
@@ -818,38 +644,49 @@ colcon test-result --verbose
 
 | # | Problem | Cause | Solution |
 |---|---------|-------|----------|
-| 1 | `ros2: command not found` | ROS2 not sourced | Run `source /opt/ros/humble/setup.bash` |
+| 1 | `ros2: command not found` | ROS2 not sourced | Run `source /opt/ros/jazzy/setup.bash` |
 | 2 | `Package 'my_robot' not found` | Workspace not sourced or not built | Run `colcon build --packages-select my_robot && source install/setup.bash` |
-| 3 | `No executable found` for swarm_publisher | Entry point missing in setup.py | Add the entry to `console_scripts` in `setup.py`, then rebuild |
-| 4 | Subscriber shows no messages | Publisher not running | Make sure the publisher is running in another terminal first |
-| 5 | `ModuleNotFoundError: rclpy` | Python environment mismatch | Make sure you source ROS2 before running. Don't use a conda/venv. |
-| 6 | Build succeeds but node doesn't update | Stale build cache | Delete `build/` and `install/` folders, then rebuild: `rm -rf build install log && colcon build` |
-| 7 | `SetuptoolsDeprecationWarning` | Newer Python version | This is just a warning — your code still works. You can ignore it. |
+| 3 | `No executable found` | Entry point missing in setup.py | Check `console_scripts` in `setup.py`, then rebuild |
+| 4 | Subscriber shows no messages | Publisher not running | Start the publisher in another terminal first |
+| 5 | `ModuleNotFoundError: rclpy` | Python env mismatch | Source ROS2 before running. Don't use conda/venv. |
+| 6 | Build succeeds but node doesn't update | Stale build cache | `rm -rf build install log && colcon build` |
+| 7 | `SetuptoolsDeprecationWarning` | Newer Python version | Just a warning — code still works. Ignore it. |
 | 8 | WSL2 can't see USB devices | USB not forwarded | Use `usbipd attach --wsl --busid <ID>` in PowerShell (Admin) |
-| 9 | Agent says "No serial port" | Wrong port or driver missing | Check port with `ls /dev/ttyUSB*`. Install CH340/CP2102 driver if needed. |
-| 10 | Multiple terminals, different behavior | Each terminal needs sourcing | Run `source /opt/ros/humble/setup.bash && source ~/ros2_ws/install/setup.bash` in EVERY new terminal |
+| 9 | Agent says "No serial port" | Wrong port or driver missing | Check with `ls /dev/ttyUSB*`. Install CH340/CP2102 driver. |
+| 10 | Namespace topics not appearing | Using absolute topic (`/topic`) | Use relative topics (`topic`) in your code |
+| 11 | Old Humble builds failing | Mixed distro builds | `rm -rf build install log` and rebuild with Jazzy sourced |
 
 ---
 
-# 📋 Quick Reference — All Commands in Order
+# 📋 Quick Reference — All Commands
 
 ```bash
 # ── ONE-TIME SETUP ──────────────────────────────────────────
-source /opt/ros/humble/setup.bash
-cd ~/ros2_ws
-colcon build --packages-select my_robot
+source /opt/ros/jazzy/setup.bash
+cd ~/SWARM-X/ros2_ws
+colcon build --packages-select my_robot my_robot_controller
 source install/setup.bash
 
-# ── TERMINAL 1: Publisher ───────────────────────────────────
-ros2 run my_robot swarm_publisher
+# ── TWO-ROBOT SIMULATION (recommended) ─────────────────────
+ros2 launch my_robot swarm_simulation.launch.py
 
-# ── TERMINAL 2: Subscriber ──────────────────────────────────
+# ── INDIVIDUAL NODES ────────────────────────────────────────
+ros2 run my_robot swarm_publisher --ros-args -p robot_name:="Dholu"
 ros2 run my_robot swarm_subscriber
+ros2 run my_robot ultrasonic_simulator
+ros2 run my_robot ultrasonic_listener
+ros2 run my_robot chatter_publisher
 
-# ── TERMINAL 3 (optional): Verify ──────────────────────────
+# ── OBSTACLE AVOIDER ───────────────────────────────────────
+ros2 run my_robot_controller obstacle_avoider
+
+# ── ESP32 PIPELINE ──────────────────────────────────────────
+ros2 launch my_robot esp32_ultrasonic.launch.py
+
+# ── VERIFY ──────────────────────────────────────────────────
 ros2 node list
 ros2 topic list
-ros2 topic echo /swarm_status
+ros2 topic echo /dholu/swarm_status
 ```
 
 ---
@@ -857,9 +694,9 @@ ros2 topic echo /swarm_status
 # 📤 Push to GitHub
 
 ```bash
-cd ~/ros2_ws
+cd ~/SWARM-X
 git add .
-git commit -m "feat: add swarm publisher/subscriber + multi-robot support"
+git commit -m "feat: migrate to Jazzy + Dholu/Bholu simulation + obstacle avoider"
 git push
 ```
 
@@ -867,8 +704,8 @@ git push
 
 # 📜 License
 
-This project is open-source. Feel free to use and modify.
+This project is open-source under the Apache-2.0 license.
 
 ---
 
-> Built with ❤️ for **SWARM-X**
+> Built with ❤️ for **SWARM-X** | ROS2 Jazzy | Ubuntu 24.04
