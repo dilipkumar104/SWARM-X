@@ -1,6 +1,6 @@
-# 🤖 SWARM-X — ROS2 Jazzy Swarm Robotics Platform
+# 🤖 SWARM-X — ROS2 Humble Swarm Robotics Platform
 
-A **ROS2 Jazzy** Python workspace for the **SWARM-X** robot swarm project, featuring a two-robot simulation network (**Dholu** & **Bholu**), ultrasonic sensor integration, and obstacle avoidance.
+A **ROS2 Humble** Python workspace for the **SWARM-X** robot swarm project, featuring a two-robot simulation network (**Dholu** & **Bholu**), ultrasonic sensor integration, and obstacle avoidance.
 
 ---
 
@@ -67,9 +67,9 @@ SWARM-X/
 
 ---
 
-# 📚 COMPLETE STEP-BY-STEP GUIDE (ROS2 Jazzy)
+# 📚 COMPLETE STEP-BY-STEP GUIDE (ROS2 Humble)
 
-> This guide walks you through **everything** — from installing ROS2 Jazzy to running the two-robot swarm simulation. Every command is copy-paste ready.
+> This guide walks you through **everything** — from installing ROS2 Humble to running the two-robot swarm simulation. Every command is copy-paste ready.
 
 ---
 
@@ -77,15 +77,15 @@ SWARM-X/
 
 | Requirement | How to check | How to install |
 |-------------|--------------|----------------|
-| **Ubuntu 24.04 (Noble)** | `lsb_release -a` | [Install WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) or upgrade |
-| **ROS2 Jazzy** | `ros2 --version` | See Step 1 below |
-| **Python 3.12+** | `python3 --version` | Included with Ubuntu 24.04 |
+| **Ubuntu 22.04 (Jammy)** | `lsb_release -a` | [Install WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) or upgrade |
+| **ROS2 Humble** | `ros2 --version` | See Step 1 below |
+| **Python 3.10+** | `python3 --version` | Included with Ubuntu 22.04 |
 | **colcon** (build tool) | `colcon --help` | `sudo apt install python3-colcon-common-extensions` |
 | **Git** | `git --version` | `sudo apt install git` |
 
 ---
 
-## Step 1 — Install ROS2 Jazzy (If Not Already Installed)
+## Step 1 — Install ROS2 Humble (If Not Already Installed)
 
 > Skip this step if `ros2 --version` already works.
 
@@ -104,10 +104,10 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
   http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
   | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-# 4. Install ROS2 Jazzy (Desktop = full install with rviz, rqt, etc.)
+# 4. Install ROS2 Humble (Desktop = full install with rviz, rqt, etc.)
 sudo apt update
 sudo apt install ros-dev-tools -y
-sudo apt install ros-jazzy-desktop -y
+sudo apt install ros-humble-desktop -y
 
 # 5. Install colcon build tool
 sudo apt install python3-colcon-common-extensions -y
@@ -115,17 +115,17 @@ sudo apt install python3-colcon-common-extensions -y
 
 ---
 
-## Step 2 — Source ROS2 Jazzy
+## Step 2 — Source ROS2 Humble
 
 **What this does:** Tells your terminal where ROS2 is installed.
 
 ```bash
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/humble/setup.bash
 ```
 
 > 🔁 **Make it permanent** (so you don't have to type it every time):
 > ```bash
-> echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+> echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 > source ~/.bashrc
 > ```
 
@@ -164,7 +164,7 @@ Summary: 2 packages finished [1.5s]
 
 > ⚠️ **IMPORTANT:** You must source BOTH ROS2 AND your workspace in every terminal:
 > ```bash
-> source /opt/ros/jazzy/setup.bash
+> source /opt/ros/humble/setup.bash
 > source ~/SWARM-X/ros2_ws/install/setup.bash
 > ```
 
@@ -177,11 +177,11 @@ If you already have the workspace and just need to update:
 ```bash
 cd ~/SWARM-X/ros2_ws
 
-# Clean old builds (if switching from Humble)
+# Clean old builds (if switching distros)
 rm -rf build/ install/ log/
 
-# Rebuild everything fresh for Jazzy
-source /opt/ros/jazzy/setup.bash
+# Rebuild everything fresh for Humble
+source /opt/ros/humble/setup.bash
 colcon build --packages-select my_robot my_robot_controller
 source install/setup.bash
 ```
@@ -220,7 +220,7 @@ This is the main feature — a complete two-robot swarm simulation that runs wit
 
 ```bash
 # Source (if not in .bashrc)
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/humble/setup.bash
 source ~/SWARM-X/ros2_ws/install/setup.bash
 
 # 🚀 Launch both robots with ONE command
@@ -245,7 +245,7 @@ ros2 launch my_robot swarm_simulation.launch.py
 ## Verify the simulation (new terminal):
 
 ```bash
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/humble/setup.bash
 source ~/SWARM-X/ros2_ws/install/setup.bash
 
 # List all active nodes
@@ -423,7 +423,7 @@ ros2 run my_robot_controller obstacle_avoider --ros-args -p forward_speed:=0.5
 ## Swarm Publisher (Terminal 1)
 
 ```bash
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/humble/setup.bash
 source ~/SWARM-X/ros2_ws/install/setup.bash
 
 # Run with default name
@@ -436,7 +436,7 @@ ros2 run my_robot swarm_publisher --ros-args -p robot_name:="Dholu"
 ## Swarm Subscriber (Terminal 2)
 
 ```bash
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/humble/setup.bash
 source ~/SWARM-X/ros2_ws/install/setup.bash
 
 ros2 run my_robot swarm_subscriber
@@ -462,7 +462,7 @@ ros2 run my_robot swarm_multi_publisher --ros-args -p num_robots:=5
 
 ---
 
-# 🔌 ESP32 Integration Guide (Jazzy)
+# 🔌 ESP32 Integration Guide (Humble)
 
 ## How the ESP32 Connects
 
@@ -504,16 +504,16 @@ ros2 run my_robot swarm_multi_publisher --ros-args -p num_robots:=5
                      GND
 ```
 
-## Install micro-ROS Agent (Jazzy)
+## Install micro-ROS Agent (Humble)
 
 ```bash
 # Option A — Install from package (recommended)
-sudo apt install ros-jazzy-micro-ros-agent
+sudo apt install ros-humble-micro-ros-agent
 
 # Option B — Build from source
 mkdir -p ~/microros_ws/src
 cd ~/microros_ws/src
-git clone -b jazzy https://github.com/micro-ROS/micro-ROS-Agent.git
+git clone -b humble https://github.com/micro-ROS/micro-ROS-Agent.git
 cd ~/microros_ws
 colcon build
 source install/setup.bash
@@ -527,7 +527,7 @@ source install/setup.bash
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
 3. **Tools → Board → Boards Manager** → Search "esp32" → Install
-4. Download `micro_ros_arduino` Jazzy release from [GitHub](https://github.com/micro-ROS/micro_ros_arduino/releases)
+4. Download `micro_ros_arduino` Humble release from [GitHub](https://github.com/micro-ROS/micro_ros_arduino/releases)
 5. **Sketch → Include Library → Add .ZIP Library** → Select the zip
 6. Open `esp32_firmware/ultrasonic_publisher.ino`
 7. **Tools → Board** → `ESP32 Dev Module`
@@ -644,7 +644,7 @@ colcon test-result --verbose
 
 | # | Problem | Cause | Solution |
 |---|---------|-------|----------|
-| 1 | `ros2: command not found` | ROS2 not sourced | Run `source /opt/ros/jazzy/setup.bash` |
+| 1 | `ros2: command not found` | ROS2 not sourced | Run `source /opt/ros/humble/setup.bash` |
 | 2 | `Package 'my_robot' not found` | Workspace not sourced or not built | Run `colcon build --packages-select my_robot && source install/setup.bash` |
 | 3 | `No executable found` | Entry point missing in setup.py | Check `console_scripts` in `setup.py`, then rebuild |
 | 4 | Subscriber shows no messages | Publisher not running | Start the publisher in another terminal first |
@@ -654,7 +654,7 @@ colcon test-result --verbose
 | 8 | WSL2 can't see USB devices | USB not forwarded | Use `usbipd attach --wsl --busid <ID>` in PowerShell (Admin) |
 | 9 | Agent says "No serial port" | Wrong port or driver missing | Check with `ls /dev/ttyUSB*`. Install CH340/CP2102 driver. |
 | 10 | Namespace topics not appearing | Using absolute topic (`/topic`) | Use relative topics (`topic`) in your code |
-| 11 | Old Humble builds failing | Mixed distro builds | `rm -rf build install log` and rebuild with Jazzy sourced |
+| 11 | Old builds failing after distro switch | Mixed distro builds | `rm -rf build install log` and rebuild with Humble sourced |
 
 ---
 
@@ -662,7 +662,7 @@ colcon test-result --verbose
 
 ```bash
 # ── ONE-TIME SETUP ──────────────────────────────────────────
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/humble/setup.bash
 cd ~/SWARM-X/ros2_ws
 colcon build --packages-select my_robot my_robot_controller
 source install/setup.bash
@@ -696,7 +696,7 @@ ros2 topic echo /dholu/swarm_status
 ```bash
 cd ~/SWARM-X
 git add .
-git commit -m "feat: migrate to Jazzy + Dholu/Bholu simulation + obstacle avoider"
+git commit -m "feat: migrate to Humble + Dholu/Bholu simulation + obstacle avoider"
 git push
 ```
 
@@ -708,4 +708,4 @@ This project is open-source under the Apache-2.0 license.
 
 ---
 
-> Built with ❤️ for **SWARM-X** | ROS2 Jazzy | Ubuntu 24.04
+> Built with ❤️ for **SWARM-X** | ROS2 Humble | Ubuntu 22.04
