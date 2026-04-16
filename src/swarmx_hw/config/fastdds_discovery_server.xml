@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  FastDDS Discovery SERVER Configuration — LAPTOP
+  
+  The laptop acts as the Discovery Server. The Pi connects to it
+  as a Super Client, reducing DDS multicast overhead on the 2GB Pi.
+  
+  Usage (on Laptop):
+    export ROS_DOMAIN_ID=30
+    export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+    export FASTRTPS_DEFAULT_PROFILES_FILE=/path/to/fastdds_discovery_server.xml
+    fastdds discovery -i 0 -l <LAPTOP_IP> -p 11811
+-->
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+    <profiles>
+        <participant profile_name="discovery_server_profile" is_default_profile="true">
+            <rtps>
+                <builtin>
+                    <discovery_config>
+                        <discoveryProtocol>SERVER</discoveryProtocol>
+                        <discoveryServersList>
+                            <RemoteServer prefix="44.53.00.5f.45.50.52.4f.53.49.4d.41">
+                                <metatrafficUnicastLocatorList>
+                                    <locator>
+                                        <udpv4>
+                                            <!-- Replace with your Laptop's IP on the hotspot -->
+                                            <address>192.168.1.100</address>
+                                            <port>11811</port>
+                                        </udpv4>
+                                    </locator>
+                                </metatrafficUnicastLocatorList>
+                            </RemoteServer>
+                        </discoveryServersList>
+                    </discovery_config>
+                </builtin>
+            </rtps>
+        </participant>
+    </profiles>
+</dds>

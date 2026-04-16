@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  FastDDS Discovery SUPER CLIENT Configuration — RASPBERRY PI
+  
+  The Pi acts as a Super Client that connects to the laptop's
+  Discovery Server. This eliminates DDS multicast discovery,
+  saving RAM and CPU on the 2GB Pi.
+  
+  Usage (on Pi):
+    export ROS_DOMAIN_ID=30
+    export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+    export FASTRTPS_DEFAULT_PROFILES_FILE=/path/to/fastdds_discovery_super_client.xml
+    export ROS_DISCOVERY_SERVER="<LAPTOP_IP>:11811"
+    
+    # Then launch your nodes normally:
+    ros2 launch swarmx_hw robot1_hw_launch.py
+-->
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+    <profiles>
+        <participant profile_name="super_client_profile" is_default_profile="true">
+            <rtps>
+                <builtin>
+                    <discovery_config>
+                        <discoveryProtocol>SUPER_CLIENT</discoveryProtocol>
+                        <discoveryServersList>
+                            <RemoteServer prefix="44.53.00.5f.45.50.52.4f.53.49.4d.41">
+                                <metatrafficUnicastLocatorList>
+                                    <locator>
+                                        <udpv4>
+                                            <!-- Replace with your Laptop's IP on the hotspot -->
+                                            <address>192.168.1.100</address>
+                                            <port>11811</port>
+                                        </udpv4>
+                                    </locator>
+                                </metatrafficUnicastLocatorList>
+                            </RemoteServer>
+                        </discoveryServersList>
+                    </discovery_config>
+                </builtin>
+            </rtps>
+        </participant>
+    </profiles>
+</dds>
