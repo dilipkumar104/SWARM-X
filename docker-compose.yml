@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SWARM-X  |  docker-compose.yml
+#
+# Services:
+#   pi_robot  — Motor controller + Lidar avoidance (runs ON the Raspberry Pi)
+#   rplidar   — rplidar_ros driver (also on the Pi)
+#
+# Run on the Pi:
+#   ROS_DOMAIN_ID=42 docker compose up
+#
+# Run on the Laptop (same Wi-Fi, same ROS_DOMAIN_ID):
+#   ROS_DOMAIN_ID=42 ros2 topic echo /scan
+# ─────────────────────────────────────────────────────────────────────────────
+version: "3.8"
+
+services:
+  # ── Robot brain (motor controller + obstacle avoider) ──────────────────────
+  pi_robot:
+    build:
+      context: .
+      dockerfile: docker/pi/Dockerfile
+    image: swarmx/pi_robot:humble
+    container_name: swarmx_pi_robot
+
+    # HOST networking is REQUIRED so ROS 2 DDS multicast can reach the laptop
+    network_mode: host
+
+    # Privileged mode grants /dev/gpiomem and USB device access
+    privileged: true
+
+    devices:
+      # Expose GPIO memory to control L298N pins
+      - /dev/gpiomem:/dev/gpiomem
+      # Expose the lidar USB serial port (change ttyUSB0 if yours differs)
+      - /dev/ttyUSB0:/dev/ttyUSB0
+
+    volumes:
+      # Mount the workspace source for live code edits (remove in production)
+      - ./ros2_ws/src:/ros2_ws/src:ro
+
+    environment:
+      # Shared domain — Pi and Laptop MUST use the same value
+      - ROS_DOMAIN_ID=42
+      # FastDDS SHM config (set in Dockerfile but explicit here too)
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastrtps/fastdds.xml
+      # Disable GUI (headless Pi)
+      - DISPLAY=""
+
+    # Raise shared-memory size limit to avoid FastDDS OOM on 2 GB Pi
+    shm_size: "128mb"
+
+    restart: unless-stopped
+
+    command: >
+      ros2 launch my_robot robot.launch.py
+
+  # ── RPLidar A1/A2/A3 standalone driver ────────────────────────────────────
+  rplidar:
+    image: swarmx/pi_robot:humble
+    container_name: swarmx_rplidar
+    network_mode: host
+    privileged: true
+
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+
+    environment:
+      - ROS_DOMAIN_ID=42
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastrtps/fastdds.xml
+
+    shm_size: "64mb"
+
+    restart: unless-stopped
+
+    # Launch the upstream rplidar_ros driver node
+    command: >
+      ros2 launch rplidar_ros rplidar_launch.py
+      serial_port:=/dev/ttyUSB0
+      frame_id:=laser
+
+    # Only needed if you want the robot brain to wait for the scan topic
+    depends_on:
+      - pi_robot
