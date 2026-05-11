@@ -29,7 +29,8 @@ setup(
     # ──────────────────────────────────────────────────────────────
     entry_points={
         'console_scripts': [
-            'obstacle_avoider = my_robot_controller.obstacle_avoider:main',
+            # V1 legacy — use my_robot obstacle_avoider (V2) for production
+            'simple_obstacle_avoider = my_robot_controller.simple_obstacle_avoider:main',
         ],
     },
 )

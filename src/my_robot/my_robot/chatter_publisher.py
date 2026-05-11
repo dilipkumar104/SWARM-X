@@ -35,7 +35,7 @@ class ChatterPublisher(Node):
         #   - Message type : String
         #   - Topic name   : /chatter
         #   - QoS depth    : 10 (buffer up to 10 messages)
-        self.publisher_ = self.create_publisher(String, '/chatter', 10)
+        self.publisher_ = self.create_publisher(String, 'chatter', 10)
 
         # Create a timer that fires every 1.0 second
         timer_period = 1.0  # seconds

@@ -50,21 +50,35 @@ class SwarmMultiPublisher(Node):
         self.publisher_ = self.create_publisher(String, 'swarm_status', 10)
 
         # ── Create one timer per robot ───────────────────────────────
-        # Each timer fires every 1 second but with a slight offset
-        # so the messages don't all arrive at the exact same time.
-        self.counters = {}  # Track message count per robot
-        self.timers = []
+        # Each robot gets a staggered one-shot that starts its repeating timer.
+        # Stagger = (robot_id-1) / num_robots seconds apart.
+        self.counters = {}
+        self.timers = []          # repeating timers (kept alive)
+        self._starter_timers = []  # one-shot starters (cancelled after use)
 
         for robot_id in range(1, self.num_robots + 1):
             self.counters[robot_id] = 0
+            offset = (robot_id - 1) * (1.0 / self.num_robots)
 
-            # Create a timer for this robot
-            # Offset each robot by 0.2 seconds so messages are staggered
-            timer = self.create_timer(
-                1.0,  # period in seconds
-                lambda rid=robot_id: self._publish_status(rid),
-            )
-            self.timers.append(timer)
+            def _make_starter(rid=robot_id):
+                def _start():
+                    # Create the repeating 1 Hz timer for this robot
+                    t = self.create_timer(
+                        1.0,
+                        lambda r=rid: self._publish_status(r),
+                    )
+                    self.timers.append(t)
+                    # ── Cancel the one-shot starter to avoid memory leak ──
+                    # Find and cancel ourselves by matching period ≈ offset
+                    for s in self._starter_timers:
+                        if not s.is_canceled():
+                            s.cancel()
+                            break
+                return _start
+
+            starter = self.create_timer(offset if offset > 0 else 0.001,
+                                        _make_starter())
+            self._starter_timers.append(starter)
 
         # ── Startup banner ───────────────────────────────────────────
         self.get_logger().info('━' * 55)
