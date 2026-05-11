@@ -43,6 +43,9 @@ setup(
             'chatter_publisher    = my_robot.chatter_publisher:main',
             'ultrasonic_listener  = my_robot.ultrasonic_listener:main',
             'ultrasonic_simulator = my_robot.ultrasonic_simulator:main',
+            # ── New hardware nodes ───────────────────────────────────
+            'motor_controller     = my_robot.motor_controller:main',
+            'obstacle_avoider     = my_robot.obstacle_avoider:main',
         ],
     },
 )
