@@ -120,7 +120,7 @@ sudo apt install python3-colcon-common-extensions -y
 **What this does:** Tells your terminal where ROS2 is installed.
 
 ```bash
-source /opt/ros/humble/setup.bash
+  source /opt/ros/humble/setup.bash
 ```
 
 > 🔁 **Make it permanent** (so you don't have to type it every time):

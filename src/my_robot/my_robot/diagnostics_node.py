@@ -5,27 +5,32 @@
 """
 diagnostics_node.py — Robot Health Monitor
 
-Monitors topic heartbeats and publishes a /diagnostics summary.
+Watches topic heartbeats and publishes a /robot_diagnostics summary.
 
-Watches:
-    /scan              — Lidar alive?
+Monitors:
+    /scan              — LiDAR alive?
     /cmd_vel           — Commands flowing?
     /odom              — Odometry alive?
     /ultrasonic/status — HC-SR04 alive?
+    /ir/temperature    — MLX90614 IR sensor alive?
 
 Publishes:
-    /robot_diagnostics  (std_msgs/String)  — JSON-like health string every 2 s
+    /robot_diagnostics  (std_msgs/String) — JSON health string every 5 s
+
+Logging: only when overall status changes (HEALTHY <-> DEGRADED),
+         not every cycle, to avoid I/O overhead on the Pi.
 """
 
 import json
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import LaserScan, Temperature
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
-TIMEOUT = 3.0   # seconds — topic considered dead after this
+TIMEOUT       = 3.0   # seconds — topic considered dead after this
+REPORT_HZ     = 5.0   # seconds between each report publish
 
 
 class DiagnosticsNode(Node):
@@ -39,9 +44,11 @@ class DiagnosticsNode(Node):
             'cmd_vel':     now,
             'odom':        now,
             'ultrasonic':  now,
+            'ir_sensor':   now,
         }
+        self._prev_overall = None   # suppress repeated identical logs
 
-        # Subscribers — just update timestamps
+        # Subscribers — only update timestamps, zero processing overhead
         self.create_subscription(LaserScan, '/scan',
             lambda m: self._touch('lidar'),
             rclpy.qos.qos_profile_sensor_data)
@@ -51,38 +58,47 @@ class DiagnosticsNode(Node):
             lambda m: self._touch('odom'), 10)
         self.create_subscription(String, '/ultrasonic/status',
             lambda m: self._touch('ultrasonic'), 10)
+        self.create_subscription(Temperature, '/ir/temperature',
+            lambda m: self._touch('ir_sensor'), 10)
 
-        # Publisher
         self._pub = self.create_publisher(String, '/robot_diagnostics', 10)
 
-        # Report timer: every 2 s
-        self.create_timer(2.0, self._report)
+        # Report every REPORT_HZ seconds (5 s is plenty, reduces I/O)
+        self.create_timer(REPORT_HZ, self._report)
 
-        self.get_logger().info('🩺 Diagnostics Node — Monitoring robot health')
+        self.get_logger().info('Diagnostics Node started — monitoring 5 topics')
 
     def _touch(self, key: str):
         self._last[key] = self.get_clock().now()
 
     def _report(self):
-        now = self.get_clock().now()
+        now    = self.get_clock().now()
         status = {}
         all_ok = True
 
         for key, last_t in self._last.items():
             elapsed = (now - last_t).nanoseconds * 1e-9
             ok = elapsed < TIMEOUT
-            status[key] = 'OK' if ok else f'DEAD ({elapsed:.1f}s)'
+            status[key] = 'OK' if ok else f'DEAD ({elapsed:.0f}s)'
             if not ok:
                 all_ok = False
 
-        status['overall'] = 'HEALTHY' if all_ok else 'DEGRADED'
+        overall = 'HEALTHY' if all_ok else 'DEGRADED'
+        status['overall'] = overall
 
         msg = String()
         msg.data = json.dumps(status)
         self._pub.publish(msg)
 
-        level = self.get_logger().info if all_ok else self.get_logger().warn
-        level(f'[Diagnostics] {status}')
+        # Only log when the health status actually changes
+        if overall != self._prev_overall:
+            if all_ok:
+                self.get_logger().info(f'[Diagnostics] {overall}: {status}')
+            else:
+                dead = [k for k, v in status.items() if 'DEAD' in str(v)]
+                self.get_logger().warn(
+                    f'[Diagnostics] {overall} — dead topics: {dead}')
+            self._prev_overall = overall
 
 
 def main(args=None):

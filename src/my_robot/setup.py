@@ -43,18 +43,14 @@ setup(
     # ──────────────────────────────────────────────────────────────
     entry_points={
         'console_scripts': [
-            'swarm_publisher       = my_robot.swarm_publisher:main',
-            'swarm_subscriber      = my_robot.swarm_subscriber:main',
-            'swarm_multi_publisher = my_robot.swarm_multi_publisher:main',
-            'chatter_publisher     = my_robot.chatter_publisher:main',
-            'ultrasonic_listener   = my_robot.ultrasonic_listener:main',
-            'ultrasonic_simulator  = my_robot.ultrasonic_simulator:main',
-            # ── Hardware nodes ──────────────────────────────
-            'motor_controller      = my_robot.motor_controller:main',
-            'obstacle_avoider      = my_robot.obstacle_avoider:main',
-            # ── New nodes ─────────────────────────────────────
-            'odometry_node         = my_robot.odometry_node:main',
-            'diagnostics_node      = my_robot.diagnostics_node:main',
+            # ── Hardware nodes ──────────────────────────────────────
+            'motor_controller  = my_robot.motor_controller:main',
+            'obstacle_avoider  = my_robot.obstacle_avoider:main',
+            'ultrasonic_listener = my_robot.ultrasonic_listener:main',
+            'ir_sensor_node    = my_robot.ir_sensor_node:main',
+            # ── Odometry & diagnostics ─────────────────────────────
+            'odometry_node     = my_robot.odometry_node:main',
+            'diagnostics_node  = my_robot.diagnostics_node:main',
         ],
     },
 )
