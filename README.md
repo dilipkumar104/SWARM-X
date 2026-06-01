@@ -573,6 +573,30 @@ ls /dev/ttyUSB*    # Should show /dev/ttyUSB0
 
 ---
 
+# 🔌 Connecting it to Real Robots!
+
+Right now, the dashboard runs on high-fidelity simulation logic so you can immediately see how it handles obstacle detection, thermal spikes, and motion changes.
+
+When you want to plug this dashboard into your actual Raspberry Pi robot running ROS2 Humble:
+
+1. **Install Rosbridge on the Raspberry Pi**: Rosbridge creates a WebSocket server on the robot so your browser can securely stream live ROS2 topic data.
+
+   ```bash
+   # Run this in your Raspberry Pi Terminal
+   sudo apt install ros-humble-rosbridge-suite
+   ```
+
+2. **Launch the WebSocket Server on the robot**:
+
+   ```bash
+   # Run this in your Raspberry Pi Terminal
+   ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+   ```
+
+3. **Stream data to the Dashboard**: Include a small library called `roslibjs` in the dashboard file to subscribe to real-time telemetry from topics like `/dholu/scan` or `/bholu/ultrasonic/range` instead of the simulated state engine.
+
+---
+
 # 💡 Full Swarm Architecture (Future Vision)
 
 ```

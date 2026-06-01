@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWARM-X — Robot Control Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── RESET & TOKENS ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:      #080c14;
+      --bg-panel:     #0d1320;
+      --bg-card:      rgba(255,255,255,0.04);
+      --border:       rgba(255,255,255,0.08);
+      --border-glow:  rgba(0,220,255,0.25);
+
+      --cyan:   #00dcff;
+      --green:  #00ff88;
+      --yellow: #ffd94d;
+      --red:    #ff4d6d;
+      --orange: #ff8c42;
+      --purple: #c77dff;
+
+      --text-primary:   #e8f0fe;
+      --text-secondary: #7a8aab;
+      --text-muted:     #3d4f6e;
+
+      --font-ui:   'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      overflow: hidden;
+    }
+
+    /* ─── LAYOUT ─────────────────────────────────────────────── */
+    .shell {
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      grid-template-columns: 1fr;
+      height: 100vh;
+      padding: 0;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo-ring {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: conic-gradient(var(--cyan), var(--purple), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      animation: spin 6s linear infinite;
+    }
+    .logo-inner {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--bg-panel);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--cyan);
+      letter-spacing: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .brand { font-size: 16px; font-weight: 700; letter-spacing: 2px; color: var(--text-primary); }
+    .brand span { color: var(--cyan); }
+    .tagline { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; margin-top: 1px; }
+
+    .header-right { display: flex; align-items: center; gap: 18px; }
+    .conn-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; font-family: var(--font-mono);
+      color: var(--green); background: rgba(0,255,136,0.08);
+      padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(0,255,136,0.2);
+    }
+    .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.4s ease infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .clock { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+
+    /* ── MAIN GRID ── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      grid-template-rows: 1fr 220px;
+      gap: 12px;
+      padding: 12px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .panel::before {
+      content: '';
+      position: absolute; inset: 0; border-radius: inherit;
+      background: radial-gradient(ellipse at top left, rgba(0,220,255,0.04), transparent 60%);
+      pointer-events: none;
+    }
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .panel-title {
+      font-size: 10px; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); }
+
+    /* ── MAP PANEL (top-left, spans row) ── */
+    #map-panel { grid-column: 1; grid-row: 1; }
+    #lidar-canvas {
+      width: 100%; flex: 1;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* ── SENSOR PANEL (top-right) ── */
+    #sensor-panel { grid-column: 2; grid-row: 1; }
+    .sensor-scroll { flex: 1; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .sensor-scroll::-webkit-scrollbar { width: 4px; }
+    .sensor-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sensor-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .sensor-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      transition: border-color .3s;
+    }
+    .sensor-card.active { border-color: var(--border-glow); }
+    .sensor-label {
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 6px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sensor-source { font-size: 9px; color: var(--cyan); font-family: var(--font-mono); }
+    .sensor-value {
+      font-family: var(--font-mono); font-size: 26px; font-weight: 700;
+      color: var(--text-primary); line-height: 1;
+    }
+    .sensor-unit { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+    .sensor-bar { margin-top: 7px; height: 3px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .sensor-fill { height: 100%; border-radius: 3px; transition: width .6s ease, background .4s; }
+
+    /* ── STATUS PANEL (bottom-left) ── */
+    #status-panel { grid-column: 1; grid-row: 2; flex-direction: row; }
+    .status-section {
+      flex: 1; display: flex; flex-direction: column;
+      padding: 12px 16px; gap: 8px;
+    }
+    .status-divider { width: 1px; background: var(--border); margin: 12px 0; }
+
+    .status-title {
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 4px;
+    }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: .5px;
+      border: 1px solid transparent;
+      transition: all .4s ease;
+      opacity: 0.3;
+    }
+    .badge.on { opacity: 1; }
+    .badge-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    .badge-ok    { background: rgba(0,255,136,0.08); color: var(--green);  border-color: rgba(0,255,136,0.25); }
+    .badge-ok    .badge-dot { background: var(--green); }
+    .badge-warn  { background: rgba(255,217,77,0.08); color: var(--yellow); border-color: rgba(255,217,77,0.25); }
+    .badge-warn  .badge-dot { background: var(--yellow); }
+    .badge-danger{ background: rgba(255,77,109,0.1); color: var(--red);    border-color: rgba(255,77,109,0.3); }
+    .badge-danger .badge-dot { background: var(--red); }
+    .badge-info  { background: rgba(0,220,255,0.08); color: var(--cyan);   border-color: rgba(0,220,255,0.25); }
+    .badge-info  .badge-dot { background: var(--cyan); }
+    .badge-purple{ background: rgba(199,125,255,0.08); color: var(--purple); border-color: rgba(199,125,255,0.25); }
+    .badge-purple .badge-dot { background: var(--purple); }
+
+    .motion-display {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .motion-arrow {
+      font-size: 32px; line-height: 1;
+      transition: all .4s;
+      filter: drop-shadow(0 0 10px var(--cyan));
+    }
+    .motion-info { flex: 1; }
+    .motion-label { font-size: 20px; font-weight: 700; font-family: var(--font-mono); color: var(--cyan); }
+    .motion-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .speed-bars { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+    .speed-row { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-muted); }
+    .speed-row span:first-child { width: 50px; }
+    .speed-track { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+    .speed-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+
+    /* ── LOG PANEL (bottom-right) ── */
+    #log-panel { grid-column: 2; grid-row: 2; }
+    .log-list { flex: 1; overflow-y: auto; padding: 6px 12px; }
+    .log-list::-webkit-scrollbar { width: 4px; }
+    .log-list::-webkit-scrollbar-track { background: transparent; }
+    .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .log-entry {
+      display: flex; gap: 8px; align-items: flex-start;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform: translateX(-6px); } to { opacity:1; transform: translateX(0); } }
+
+    .log-ts { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); white-space: nowrap; padding-top: 1px; }
+    .log-icon { font-size: 11px; padding-top: 1px; }
+    .log-msg { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+    .log-msg.info  { color: var(--cyan); }
+    .log-msg.warn  { color: var(--yellow); }
+    .log-msg.danger{ color: var(--red); }
+    .log-msg.ok    { color: var(--green); }
+    .log-msg.purple{ color: var(--purple); }
+
+    /* ── ROBOT OVERLAY ON MAP ── */
+    .map-overlay-info {
+      position: absolute; top: 52px; left: 12px;
+      display: flex; flex-direction: column; gap: 5px;
+      pointer-events: none;
+    }
+    .map-pill {
+      background: rgba(13,19,32,0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 10px;
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--text-secondary);
+      backdrop-filter: blur(8px);
+    }
+    .map-pill span { color: var(--cyan); }
+
+    /* ── MAP TOP CONTROLS ── */
+    .map-controls { display: flex; gap: 6px; }
+    .map-btn {
+      padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-muted);
+      font-size: 10px; cursor: pointer; transition: all .2s;
+    }
+    .map-btn:hover, .map-btn.active { border-color: var(--cyan); color: var(--cyan); }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-ring"><div class="logo-inner">SX</div></div>
+      <div>
+        <div class="brand"><span>SWARM</span>-X</div>
+        <div class="tagline">ROBOT CONTROL &amp; MONITORING DASHBOARD</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="conn-badge"><div class="conn-dot"></div>ROS2 CONNECTED</div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- ══ MAP PANEL ══ -->
+    <div class="panel" id="map-panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot"></div>2D LiDAR MAP — LIVE SCAN</div>
+        <div class="map-controls">
+          <button class="map-btn active" id="btn-lidar">LiDAR</button>
+          <button class="map-btn" id="btn-path">Path</button>
+          <button class="map-btn" id="btn-clear">Clear</button>
+        </div>
+      </div>
+      <canvas id="lidar-canvas"></canvas>
+      <div class="map-overlay-info">
+        <div class="map-pill">POS X: <span id="pos-x">0.00</span> m</div>
+        <div class="map-pill">POS Y: <span id="pos-y">0.00</span> m</div>
+        <div class="map-pill">YAW: <span id="pos-yaw">0.0</span>°</div>
+        <div class="map-pill">SCANS: <span id="scan-count">0</span></div>
+      </div>
+    </div>
+
+    <!-- ══ SENSOR PANEL ══ -->
+    <div class="panel" id="sensor-panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot" style="background:var(--purple)"></div>LIVE SENSORS</div>
+      </div>
+      <div class="sensor-scroll">
+
+        <div class="sensor-card" id="sc-lidar">
+          <div class="sensor-label">LiDAR — Min Distance <span class="sensor-source">RPLIDAR A1</span></div>
+          <div class="sensor-value"><span id="s-lidar">0.85</span><span class="sensor-unit">m</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-lidar" style="width:20%;background:var(--cyan)"></div></div>
+        </div>
+
+        <div class="sensor-card" id="sc-thermal">
+          <div class="sensor-label">Thermal Camera — Peak Temp <span class="sensor-source">AMG8833</span></div>
+          <div class="sensor-value"><span id="s-thermal">28.4</span><span class="sensor-unit">°C</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-thermal" style="width:30%;background:var(--orange)"></div></div>
+        </div>
+
+        <div class="sensor-card" id="sc-hcsr">
+          <div class="sensor-label">Ultrasonic — Front Range <span class="sensor-source">HC-SR04</span></div>
+          <div class="sensor-value"><span id="s-hcsr">42</span><span class="sensor-unit">cm</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-hcsr" style="width:42%;background:var(--green)"></div></div>
+        </div>
+
+        <div class="sensor-card" id="sc-imu-r">
+          <div class="sensor-label">IMU — Roll <span class="sensor-source">MPU6050</span></div>
+          <div class="sensor-value"><span id="s-imu-r">0.3</span><span class="sensor-unit">°</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-imu-r" style="width:50%;background:var(--purple)"></div></div>
+        </div>
+
+        <div class="sensor-card" id="sc-imu-p">
+          <div class="sensor-label">IMU — Pitch <span class="sensor-source">MPU6050</span></div>
+          <div class="sensor-value"><span id="s-imu-p">-1.2</span><span class="sensor-unit">°</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-imu-p" style="width:50%;background:var(--purple)"></div></div>
+        </div>
+
+        <div class="sensor-card" id="sc-battery">
+          <div class="sensor-label">Battery Voltage <span class="sensor-source">ADC</span></div>
+          <div class="sensor-value"><span id="s-battery">11.8</span><span class="sensor-unit">V</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-battery" style="width:75%;background:var(--green)"></div></div>
+        </div>
+
+        <div class="sensor-card" id="sc-cpu">
+          <div class="sensor-label">CPU Load — Raspberry Pi <span class="sensor-source">SYSTEM</span></div>
+          <div class="sensor-value"><span id="s-cpu">34</span><span class="sensor-unit">%</span></div>
+          <div class="sensor-bar"><div class="sensor-fill" id="sf-cpu" style="width:34%;background:var(--cyan)"></div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ STATUS PANEL ══ -->
+    <div class="panel" id="status-panel">
+
+      <!-- Motion state -->
+      <div class="status-section">
+        <div class="status-title">Motion State</div>
+        <div class="motion-display">
+          <div class="motion-arrow" id="motion-arrow">→</div>
+          <div class="motion-info">
+            <div class="motion-label" id="motion-label">MOVING</div>
+            <div class="motion-sub" id="motion-sub">Forward — nominal</div>
+          </div>
+        </div>
+        <div class="speed-bars">
+          <div class="speed-row">
+            <span>Linear X</span>
+            <div class="speed-track"><div class="speed-fill" id="spd-linear" style="width:55%;background:var(--cyan)"></div></div>
+            <span id="spd-linear-val">0.22 m/s</span>
+          </div>
+          <div class="speed-row">
+            <span>Angular Z</span>
+            <div class="speed-track"><div class="speed-fill" id="spd-angular" style="width:0%;background:var(--purple)"></div></div>
+            <span id="spd-angular-val">0.00 r/s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-divider"></div>
+
+      <!-- Alert badges -->
+      <div class="status-section">
+        <div class="status-title">System Alerts</div>
+        <div class="badges">
+          <div class="badge badge-ok on"    id="b-ok">     <div class="badge-dot"></div>SYSTEM OK</div>
+          <div class="badge badge-info"     id="b-moving">  <div class="badge-dot"></div>MOVING</div>
+          <div class="badge badge-warn"     id="b-obs">     <div class="badge-dot"></div>OBSTACLE</div>
+          <div class="badge badge-purple on" id="b-thermal"> <div class="badge-dot"></div>THERMAL TARGET</div>
+          <div class="badge badge-danger"   id="b-stop">    <div class="badge-dot"></div>STOPPED</div>
+          <div class="badge badge-warn"     id="b-lowbat">  <div class="badge-dot"></div>LOW BATTERY</div>
+          <div class="badge badge-info on"  id="b-scan">    <div class="badge-dot"></div>SCANNING</div>
+        </div>
+      </div>
+
+      <div class="status-divider"></div>
+
+      <!-- Nav info -->
+      <div class="status-section" style="min-width:160px">
+        <div class="status-title">Navigation</div>
+        <div class="badges" style="flex-direction:column; gap:5px;">
+          <div class="badge badge-ok on"><div class="badge-dot"></div>OBSTACLE AVOIDER</div>
+          <div class="badge badge-info on" id="b-nav2"><div class="badge-dot"></div>NAV2 ACTIVE</div>
+          <div class="badge badge-info" id="b-slam"><div class="badge-dot"></div>SLAM MAPPING</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ LOG PANEL ══ -->
+    <div class="panel" id="log-panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot" style="background:var(--green)"></div>EVENT LOG</div>
+        <button class="map-btn" id="btn-clear-log">Clear</button>
+      </div>
+      <div class="log-list" id="log-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────
+   SWARM-X Dashboard — Simulation Engine
+───────────────────────────────────────────────────────── */
+
+// ── State ──
+const state = {
+  x: 0, y: 0, yaw: 0,
+  scanCount: 0,
+  lidar: 0.85,
+  thermal: 28.4,
+  hcsr: 42,
+  imuRoll: 0.3,
+  imuPitch: -1.2,
+  battery: 11.8,
+  cpu: 34,
+  linearX: 0.22,
+  angularZ: 0.0,
+  motionState: 'MOVING',  // MOVING | TURNING | STOPPED
+  obstacle: false,
+  thermalTarget: false,
+  lowBattery: false,
+  pathPoints: [],
+  robotAngle: 0,
+  scenario: 0,
+  scenarioTimer: 0,
+};
+
+const SCENARIOS = ['forward','obstacle_right','obstacle_front','thermal','clear'];
+
+// ── Clock ──
+function updateClock() {
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    d.toLocaleTimeString('en-IN', {hour12: false});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── Canvas LiDAR map ──
+const canvas = document.getElementById('lidar-canvas');
+const ctx = canvas.getContext('2d');
+let showPath = true;
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const headerH = canvas.parentElement.querySelector('.panel-header').offsetHeight;
+  canvas.width  = rect.width;
+  canvas.height = rect.height - headerH;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Robot position in canvas coords (center of map)
+let mapCx, mapCy, scale = 80; // px per metre
+
+function toCanvas(wx, wy) {
+  return { x: mapCx + wx * scale, y: mapCy - wy * scale };
+}
+
+// Fake LiDAR scan beams
+function generateScan() {
+  const beams = [];
+  const n = 360;
+  for (let i = 0; i < n; i++) {
+    const ang = (i * Math.PI * 2) / n + state.robotAngle;
+    let dist = 2.5 + Math.random() * 1.5;
+    // Add fake walls/obstacles
+    if (ang > 0.2 && ang < 0.6) dist = 0.5 + Math.random() * 0.15; // obstacle ahead-right
+    if (ang > Math.PI - 0.2 && ang < Math.PI + 0.2) dist = 1.2 + Math.random() * 0.3;
+    if (state.obstacle && ang > -0.3 && ang < 0.3) dist = 0.3 + Math.random() * 0.1;
+    beams.push({ ang, dist });
+  }
+  return beams;
+}
+
+function drawMap() {
+  mapCx = canvas.width / 2;
+  mapCy = canvas.height / 2;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  const gridStep = scale;
+  for (let x = mapCx % gridStep; x < canvas.width; x += gridStep) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = mapCy % gridStep; y < canvas.height; y += gridStep) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // Range rings
+  [1, 2, 3].forEach(r => {
+    ctx.beginPath();
+    ctx.arc(mapCx, mapCy, r * scale, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,220,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,220,255,0.25)';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillText(`${r}m`, mapCx + r * scale + 3, mapCy - 3);
+  });
+
+  // LiDAR scan fill
+  const beams = generateScan();
+  ctx.beginPath();
+  const first = beams[0];
+  const fp = { x: mapCx + Math.cos(first.ang) * first.dist * scale, y: mapCy - Math.sin(first.ang) * first.dist * scale };
+  ctx.moveTo(fp.x, fp.y);
+  beams.forEach(b => {
+    ctx.lineTo(mapCx + Math.cos(b.ang) * b.dist * scale, mapCy - Math.sin(b.ang) * b.dist * scale);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,220,255,0.06)';
+  ctx.fill();
+
+  // LiDAR dots
+  beams.forEach(b => {
+    const px = mapCx + Math.cos(b.ang) * b.dist * scale;
+    const py = mapCy - Math.sin(b.ang) * b.dist * scale;
+    ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+    const hue = b.dist < 0.5 ? 'rgba(255,77,109,0.9)' : b.dist < 1 ? 'rgba(255,217,77,0.8)' : 'rgba(0,220,255,0.6)';
+    ctx.fillStyle = hue; ctx.fill();
+  });
+
+  // Explored path
+  if (showPath && state.pathPoints.length > 1) {
+    ctx.beginPath();
+    const p0 = toCanvas(state.pathPoints[0].x, state.pathPoints[0].y);
+    ctx.moveTo(p0.x, p0.y);
+    state.pathPoints.forEach(pt => {
+      const c = toCanvas(pt.x, pt.y);
+      ctx.lineTo(c.x, c.y);
+    });
+    ctx.strokeStyle = 'rgba(0,255,136,0.5)';
+    ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+    // Path dots
+    state.pathPoints.forEach(pt => {
+      const c = toCanvas(pt.x, pt.y);
+      ctx.beginPath(); ctx.arc(c.x, c.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,255,136,0.4)'; ctx.fill();
+    });
+  }
+
+  // Thermal target glow
+  if (state.thermalTarget) {
+    const tp = toCanvas(state.x + 0.8, state.y + 0.3);
+    ctx.beginPath(); ctx.arc(tp.x, tp.y, 14, 0, Math.PI * 2);
+    const g = ctx.createRadialGradient(tp.x, tp.y, 2, tp.x, tp.y, 14);
+    g.addColorStop(0, 'rgba(255,140,66,0.8)');
+    g.addColorStop(1, 'rgba(255,140,66,0)');
+    ctx.fillStyle = g; ctx.fill();
+    ctx.fillStyle = 'rgba(255,140,66,0.9)'; ctx.font = 'bold 11px Inter';
+    ctx.fillText('🔥 TARGET', tp.x + 16, tp.y + 4);
+  }
+
+  // Robot body
+  const rx = mapCx, ry = mapCy;
+  ctx.save();
+  ctx.translate(rx, ry); ctx.rotate(-state.robotAngle);
+
+  // Heading cone
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, 40, -0.4, 0.4);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,220,255,0.08)'; ctx.fill();
+
+  // Robot circle
+  ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,220,255,0.15)'; ctx.fill();
+  ctx.strokeStyle = '#00dcff'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Robot direction arrow
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(18, 0);
+  ctx.strokeStyle = '#00dcff'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(12, -5); ctx.lineTo(12, 5); ctx.closePath();
+  ctx.fillStyle = '#00dcff'; ctx.fill();
+
+  // Robot label
+  ctx.fillStyle = '#e8f0fe'; ctx.font = 'bold 9px Inter';
+  ctx.textAlign = 'center'; ctx.fillText('DHOLU', 0, 4);
+  ctx.restore();
+
+  // Obstacle warning flash
+  if (state.obstacle) {
+    ctx.beginPath();
+    const ox = mapCx + Math.cos(state.robotAngle) * 30;
+    const oy = mapCy - Math.sin(state.robotAngle) * 30;
+    ctx.arc(ox, oy, 18, 0, Math.PI * 2);
+    const t = Date.now() / 400;
+    ctx.fillStyle = `rgba(255,77,109,${0.3 + 0.3 * Math.sin(t)})`;
+    ctx.fill();
+    ctx.fillStyle = '#ff4d6d'; ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('⚠', ox, oy + 4);
+  }
+}
+
+// ── Sensor update ──
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function setSensor(id, val, unit) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+function setBar(id, pct, color) {
+  const el = document.getElementById(id);
+  if (el) { el.style.width = clamp(pct, 0, 100) + '%'; if (color) el.style.background = color; }
+}
+
+function updateSensors() {
+  // Drift values naturally
+  state.lidar  = clamp(state.lidar + (Math.random() - 0.5) * 0.12, 0.3, 4.0);
+  state.thermal = clamp(state.thermal + (Math.random() - 0.5) * 0.4, 24, 45);
+  state.hcsr    = clamp(state.hcsr + (Math.random() - 0.5) * 4, 5, 400);
+  state.imuRoll = clamp(state.imuRoll + (Math.random() - 0.5) * 0.3, -10, 10);
+  state.imuPitch= clamp(state.imuPitch + (Math.random() - 0.5) * 0.3, -10, 10);
+  state.battery = clamp(state.battery - 0.0005, 9.0, 12.6);
+  state.cpu     = clamp(state.cpu + (Math.random() - 0.5) * 3, 10, 95);
+
+  setSensor('s-lidar',   state.lidar.toFixed(2));
+  setSensor('s-thermal', state.thermal.toFixed(1));
+  setSensor('s-hcsr',    Math.round(state.hcsr));
+  setSensor('s-imu-r',   state.imuRoll.toFixed(1));
+  setSensor('s-imu-p',   state.imuPitch.toFixed(1));
+  setSensor('s-battery', state.battery.toFixed(1));
+  setSensor('s-cpu',     Math.round(state.cpu));
+
+  // Bars
+  setBar('sf-lidar',   (1 - state.lidar / 4) * 100, state.lidar < 0.5 ? 'var(--red)' : state.lidar < 1 ? 'var(--yellow)' : 'var(--cyan)');
+  setBar('sf-thermal', ((state.thermal - 20) / 30) * 100, state.thermal > 37 ? 'var(--red)' : state.thermal > 33 ? 'var(--orange)' : 'var(--cyan)');
+  setBar('sf-hcsr',    (state.hcsr / 400) * 100, state.hcsr < 15 ? 'var(--red)' : state.hcsr < 30 ? 'var(--yellow)' : 'var(--green)');
+  setBar('sf-imu-r',   50 + state.imuRoll * 3, 'var(--purple)');
+  setBar('sf-imu-p',   50 + state.imuPitch * 3, 'var(--purple)');
+  setBar('sf-battery', ((state.battery - 9) / 3.6) * 100, state.battery < 10.5 ? 'var(--red)' : state.battery < 11 ? 'var(--yellow)' : 'var(--green)');
+  setBar('sf-cpu',     state.cpu, state.cpu > 80 ? 'var(--red)' : state.cpu > 60 ? 'var(--yellow)' : 'var(--cyan)');
+
+  // Active card highlight
+  ['sc-lidar','sc-thermal','sc-hcsr','sc-imu-r','sc-imu-p','sc-battery','sc-cpu'].forEach(id => {
+    document.getElementById(id).classList.toggle('active', Math.random() > 0.7);
+  });
+}
+
+// ── Scenario simulation ──
+function runScenario() {
+  state.scenarioTimer++;
+  if (state.scenarioTimer > 60) {
+    state.scenarioTimer = 0;
+    state.scenario = (state.scenario + 1) % SCENARIOS.length;
+  }
+
+  const sc = SCENARIOS[state.scenario];
+  const arrows = { MOVING:'→', TURNING:'↻', STOPPED:'■' };
+  const subs   = { MOVING:'Forward — nominal', TURNING:'Avoiding obstacle', STOPPED:'Path blocked' };
+
+  if (sc === 'forward') {
+    state.motionState = 'MOVING'; state.obstacle = false; state.thermalTarget = false;
+    state.linearX = 0.22; state.angularZ = 0;
+    state.robotAngle += 0.01;
+    state.x += Math.cos(state.robotAngle) * 0.02;
+    state.y += Math.sin(state.robotAngle) * 0.02;
+  } else if (sc === 'obstacle_right') {
+    state.motionState = 'TURNING'; state.obstacle = false; state.thermalTarget = false;
+    state.linearX = 0.10; state.angularZ = 0.5;
+    state.robotAngle += 0.03;
+  } else if (sc === 'obstacle_front') {
+    state.motionState = 'STOPPED'; state.obstacle = true; state.thermalTarget = false;
+    state.linearX = 0; state.angularZ = 0;
+    if (state.lidar > 0.35) state.lidar = 0.3 + Math.random() * 0.05;
+    if (state.hcsr > 14) state.hcsr = 10 + Math.random() * 4;
+  } else if (sc === 'thermal') {
+    state.motionState = 'MOVING'; state.obstacle = false; state.thermalTarget = true;
+    state.linearX = 0.15; state.angularZ = 0.1;
+    if (state.thermal < 38) state.thermal = 38 + Math.random() * 3;
+    state.robotAngle += 0.008;
+  } else if (sc === 'clear') {
+    state.motionState = 'MOVING'; state.obstacle = false; state.thermalTarget = false;
+    state.linearX = 0.22; state.angularZ = 0;
+    state.robotAngle += 0.005;
+  }
+
+  // Record path
+  const cp = toCanvas(state.x, state.y);
+  if (state.pathPoints.length === 0 ||
+      Math.hypot(cp.x - toCanvas(state.pathPoints[state.pathPoints.length-1].x, state.pathPoints[state.pathPoints.length-1].y).x,
+                 cp.y - toCanvas(state.pathPoints[state.pathPoints.length-1].x, state.pathPoints[state.pathPoints.length-1].y).y) > 8) {
+    state.pathPoints.push({ x: state.x, y: state.y });
+    if (state.pathPoints.length > 80) state.pathPoints.shift();
+  }
+
+  // Update motion display
+  document.getElementById('motion-arrow').textContent = arrows[state.motionState] || '→';
+  document.getElementById('motion-label').textContent = state.motionState;
+  document.getElementById('motion-label').style.color = state.motionState === 'STOPPED' ? 'var(--red)' : state.motionState === 'TURNING' ? 'var(--yellow)' : 'var(--cyan)';
+  document.getElementById('motion-sub').textContent = subs[state.motionState] || '';
+  document.getElementById('spd-linear').style.width = (state.linearX / 0.5 * 100) + '%';
+  document.getElementById('spd-linear-val').textContent = state.linearX.toFixed(2) + ' m/s';
+  document.getElementById('spd-angular').style.width = (Math.abs(state.angularZ) / 2 * 100) + '%';
+  document.getElementById('spd-angular-val').textContent = state.angularZ.toFixed(2) + ' r/s';
+
+  // Pos overlay
+  document.getElementById('pos-x').textContent = state.x.toFixed(2);
+  document.getElementById('pos-y').textContent = state.y.toFixed(2);
+  document.getElementById('pos-yaw').textContent = (state.robotAngle * 180 / Math.PI % 360).toFixed(1);
+  document.getElementById('scan-count').textContent = state.scanCount++;
+
+  // Badges
+  state.lowBattery = state.battery < 10.8;
+  setBadge('b-ok',      !state.obstacle && !state.lowBattery);
+  setBadge('b-moving',  state.motionState === 'MOVING');
+  setBadge('b-obs',     state.obstacle);
+  setBadge('b-thermal', state.thermalTarget);
+  setBadge('b-stop',    state.motionState === 'STOPPED');
+  setBadge('b-lowbat',  state.lowBattery);
+  setBadge('b-scan',    true);
+}
+
+function setBadge(id, on) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('on', !!on);
+}
+
+// ── Event Log ──
+const LOG_EVENTS = [
+  { sc: 'forward',        msg: 'Scan started — path clear', type: 'ok',     icon: '🟢' },
+  { sc: 'forward',        msg: 'Publishing /dholu/swarm_status', type: 'info', icon: '📡' },
+  { sc: 'obstacle_right', msg: 'Obstacle detected right — turning left', type: 'warn', icon: '⚠️' },
+  { sc: 'obstacle_front', msg: 'OBSTACLE FRONT — cmd_vel: 0,0', type: 'danger', icon: '🛑' },
+  { sc: 'obstacle_front', msg: 'HC-SR04: 12 cm — DANGER zone', type: 'danger', icon: '📏' },
+  { sc: 'thermal',        msg: 'Thermal target detected — 39.2°C', type: 'purple', icon: '🔥' },
+  { sc: 'thermal',        msg: 'AMG8833 peak pixel: row 4, col 5', type: 'purple', icon: '🌡️' },
+  { sc: 'clear',          msg: 'Path clear — resuming navigation', type: 'ok', icon: '✅' },
+  { sc: 'forward',        msg: 'LiDAR scan: 360 pts @ 5 Hz', type: 'info', icon: 'ℹ️' },
+  { sc: 'forward',        msg: 'IMU stable — roll: 0.3° pitch: -1.1°', type: 'info', icon: '📐' },
+];
+
+let lastLogSc = '';
+function addLog(msg, type, icon) {
+  const list = document.getElementById('log-list');
+  const d = new Date();
+  const ts = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}.${String(d.getMilliseconds()).slice(0,2)}`;
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-ts">${ts}</span><span class="log-icon">${icon}</span><span class="log-msg ${type}">${msg}</span>`;
+  list.insertBefore(entry, list.firstChild);
+  while (list.children.length > 60) list.removeChild(list.lastChild);
+}
+
+let logTimer = 0;
+function updateLog() {
+  logTimer++;
+  if (logTimer % 30 === 0) {
+    const sc = SCENARIOS[state.scenario];
+    const events = LOG_EVENTS.filter(e => e.sc === sc);
+    if (events.length) {
+      const e = events[Math.floor(Math.random() * events.length)];
+      addLog(e.msg, e.type, e.icon);
+    }
+  }
+  if (logTimer % 120 === 0) addLog('Heartbeat OK — all nodes alive', 'ok', '💓');
+  if (logTimer % 90 === 0)  addLog(`Battery: ${state.battery.toFixed(1)}V — CPU: ${Math.round(state.cpu)}%`, 'info', '🔋');
+}
+
+// ── Map controls ──
+document.getElementById('btn-lidar').addEventListener('click', () => {});
+document.getElementById('btn-path').addEventListener('click', () => {
+  showPath = !showPath;
+  document.getElementById('btn-path').classList.toggle('active', showPath);
+});
+document.getElementById('btn-clear').addEventListener('click', () => { state.pathPoints = []; });
+document.getElementById('btn-clear-log').addEventListener('click', () => {
+  document.getElementById('log-list').innerHTML = '';
+});
+
+// ── Seed initial log entries ──
+addLog('SWARM-X dashboard initialized', 'ok', '🚀');
+addLog('ROS2 Humble — connected', 'ok', '✅');
+addLog('LiDAR node started — /dholu/scan', 'info', '📡');
+addLog('Thermal node started — /dholu/thermal', 'info', '🌡️');
+addLog('Ultrasonic listener up — HC-SR04', 'info', '📏');
+addLog('Nav2 obstacle avoider — READY', 'ok', '🧠');
+
+// ── Main loop ──
+function tick() {
+  runScenario();
+  updateSensors();
+  drawMap();
+  updateLog();
+  requestAnimationFrame(tick);
+}
+
+// Stagger start for sensors
+let frame = 0;
+function throttledTick() {
+  frame++;
+  if (frame % 2 === 0) { updateSensors(); updateLog(); }
+  runScenario();
+  drawMap();
+  requestAnimationFrame(throttledTick);
+}
+
+requestAnimationFrame(throttledTick);
+</script>
+</body>
+</html>
