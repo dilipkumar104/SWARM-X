@@ -27,6 +27,8 @@
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>
   <exec_depend>rviz2</exec_depend>
+  <!-- Dashboard bridge -->
+  <exec_depend>rosbridge_server</exec_depend>
 
   <!-- Testing -->
   <test_depend>ament_copyright</test_depend>
