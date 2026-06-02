@@ -44,7 +44,9 @@ class UltrasonicSimulator(Node):
         super().__init__('ultrasonic_simulator')
 
         # ── Publisher: ultrasonic/range (relative topic) ───────────
-        self.pub = self.create_publisher(Range, 'ultrasonic/range', 10)
+        self.pub = self.create_publisher(
+            Range, 'ultrasonic/range',
+            rclpy.qos.qos_profile_sensor_data)
 
         # ── Timer at PUBLISH_HZ ────────────────────────────────────
         self.timer = self.create_timer(1.0 / self.PUBLISH_HZ, self._tick)

@@ -5,17 +5,17 @@
 """
 diagnostics_node.py — Robot Health Monitor
 
-Watches topic heartbeats and publishes a /robot_diagnostics summary.
+Watches topic heartbeats and publishes a robot_diagnostics summary.
 
 Monitors:
-    /scan              — LiDAR alive?
-    /cmd_vel           — Commands flowing?
-    /odom              — Odometry alive?
-    /ultrasonic/status — HC-SR04 alive?
-    /ir/temperature    — MLX90614 IR sensor alive?
+    scan              — LiDAR alive?
+    cmd_vel           — Commands flowing?
+    odom              — Odometry alive?
+    ultrasonic/status — HC-SR04 alive?
+    ir/temperature    — MLX90614 IR sensor alive?
 
 Publishes:
-    /robot_diagnostics  (std_msgs/String) — JSON health string every 5 s
+    robot_diagnostics  (std_msgs/String) — JSON health string every 5 s
 
 Logging: only when overall status changes (HEALTHY <-> DEGRADED),
          not every cycle, to avoid I/O overhead on the Pi.
@@ -30,7 +30,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 TIMEOUT       = 3.0   # seconds — topic considered dead after this
-REPORT_HZ     = 5.0   # seconds between each report publish
+REPORT_PERIOD_S = 5.0   # seconds between each diagnostic report
 
 
 class DiagnosticsNode(Node):
@@ -49,22 +49,22 @@ class DiagnosticsNode(Node):
         self._prev_overall = None   # suppress repeated identical logs
 
         # Subscribers — only update timestamps, zero processing overhead
-        self.create_subscription(LaserScan, '/scan',
+        self.create_subscription(LaserScan, 'scan',
             lambda m: self._touch('lidar'),
             rclpy.qos.qos_profile_sensor_data)
-        self.create_subscription(Twist, '/cmd_vel',
+        self.create_subscription(Twist, 'cmd_vel',
             lambda m: self._touch('cmd_vel'), 10)
-        self.create_subscription(Odometry, '/odom',
+        self.create_subscription(Odometry, 'odom',
             lambda m: self._touch('odom'), 10)
-        self.create_subscription(String, '/ultrasonic/status',
+        self.create_subscription(String, 'ultrasonic/status',
             lambda m: self._touch('ultrasonic'), 10)
-        self.create_subscription(Temperature, '/ir/temperature',
+        self.create_subscription(Temperature, 'ir/temperature',
             lambda m: self._touch('ir_sensor'), 10)
 
-        self._pub = self.create_publisher(String, '/robot_diagnostics', 10)
+        self._pub = self.create_publisher(String, 'robot_diagnostics', 10)
 
-        # Report every REPORT_HZ seconds (5 s is plenty, reduces I/O)
-        self.create_timer(REPORT_HZ, self._report)
+        # Report every REPORT_PERIOD_S seconds (5 s is plenty, reduces I/O)
+        self.create_timer(REPORT_PERIOD_S, self._report)
 
         self.get_logger().info('Diagnostics Node started — monitoring 5 topics')
 

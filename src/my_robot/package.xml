@@ -3,7 +3,7 @@
 <package format="3">
   <name>my_robot</name>
   <version>0.1.0</version>
-  <description>SWARM-X ROS2 package — chatter publisher + ESP32 ultrasonic listener</description>
+  <description>SWARM-X ROS2 — single-robot stack: RPLidar A1, HC-SR04, MLX90614, MPU6050, L298N motor control, SLAM, Nav2</description>
   <maintainer email="dilip@todo.todo">dilip</maintainer>
   <license>Apache-2.0</license>
 

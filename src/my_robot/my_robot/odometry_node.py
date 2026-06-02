@@ -3,11 +3,15 @@
 # Licensed under Apache-2.0
 
 """
-odometry_node.py — Dead-Reckoning Wheel Odometry
+odometry_node.py — Dead-Reckoning Odometry (NO Wheel Encoders)
 
-Integrates /cmd_vel (Twist) over time to produce a position estimate.
+INTEGRATES cmd_vel (Twist) over time to estimate robot position.
+This is DEAD RECKONING — drift accumulates without bound because
+this robot has no wheel encoders. When SLAM is enabled, the
+LiDAR scan-matcher corrects the drift.
+
 Broadcasts TF: odom -> base_link
-Publishes:    /odom (nav_msgs/Odometry)
+Publishes:    odom (nav_msgs/Odometry)
 """
 
 import math
@@ -40,9 +44,9 @@ class OdometryNode(Node):
         self._last_time = self.get_clock().now()
 
         self._tf_broadcaster = TransformBroadcaster(self)
-        self._odom_pub = self.create_publisher(Odometry, '/odom', 10)
+        self._odom_pub = self.create_publisher(Odometry, 'odom', 10)
         self._cmd_sub = self.create_subscription(
-            Twist, '/cmd_vel', self._cmd_vel_callback, 10)
+            Twist, 'cmd_vel', self._cmd_vel_callback, 10)
         self._timer = self.create_timer(1.0 / hz, self._update)
 
         self.get_logger().info('━' * 60)

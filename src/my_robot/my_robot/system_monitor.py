@@ -6,12 +6,14 @@
 system_monitor.py — CPU, RAM & Temperature Monitor
 
 Publishes Raspberry Pi system health metrics for the dashboard:
-    /system/status  (std_msgs/String)  — JSON with cpu%, ram%, cpu_temp_c
+    system/status  (std_msgs/String)  — JSON with cpu%, ram%, cpu_temp_c
 
 This is a pure Python node (no hardware) — works on both Pi and laptop.
 """
 
 import json
+import math
+import random
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -64,7 +66,6 @@ class SystemMonitor(Node):
                 'simulated':    False,
             }
         # Fallback simulator
-        import math, random
         self._sim_t += 0.1
         cpu = 30 + 20 * abs(math.sin(self._sim_t * 0.3)) + random.uniform(-3, 3)
         ram = 45 + 10 * math.sin(self._sim_t * 0.1) + random.uniform(-2, 2)

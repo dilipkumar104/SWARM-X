@@ -47,7 +47,7 @@ def generate_launch_description():
     sensor_nodes = GroupAction([
         PushRosNamespace(robot_ns),
 
-        # LiDAR simulator (publishes /dholu/scan)
+        # Ultrasonic simulator (publishes ultrasonic/range for testing)
         Node(
             package='my_robot',
             executable='ultrasonic_simulator',
@@ -63,13 +63,12 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # Thermal camera (AMG8833 or simulator)
+        # IR Sensor (MLX90614 or simulator)
         Node(
             package='my_robot',
-            executable='thermal_node',
-            name='thermal_node',
+            executable='ir_sensor_node',
+            name='ir_sensor_node',
             output='screen',
-            parameters=[{'simulate': simulate}],
         ),
 
         # IMU (MPU6050 or simulator)
@@ -98,14 +97,7 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # Swarm publisher (robot heartbeat)
-        Node(
-            package='my_robot',
-            executable='swarm_publisher',
-            name='swarm_publisher',
-            output='screen',
-            parameters=[{'robot_name': robot_ns}],
-        ),
+
 
         # Obstacle avoider brain
         Node(

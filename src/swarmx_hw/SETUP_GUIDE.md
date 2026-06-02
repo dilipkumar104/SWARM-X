@@ -1,5 +1,13 @@
 # 🛠️ SWARM-X Setup Guide — Pi ↔ Laptop Distributed Architecture
 
+> ⚠️ **PACKAGE ARCHIVED:** The `swarmx_hw` package has been superseded by
+> `my_robot`. This guide remains as **reference documentation** for FastDDS
+> Discovery Server, chrony clock sync, RPLidar udev rules, and distributed
+> Pi ↔ Laptop architecture. For the active robot launch, use:
+> ```bash
+> ros2 launch my_robot master.launch.py
+> ```
+
 > **This guide covers everything you need to get Robot 1 mapping a room autonomously.**  
 > Pi handles hardware. Laptop handles SLAM. Both talk via FastDDS Discovery Server.
 

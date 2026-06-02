@@ -1,6 +1,6 @@
 # 🔌 ESP32 Firmware — Ultrasonic Publisher (micro-ROS)
 
-This directory contains the Arduino sketch that runs on the **ESP32** to read an **HC-SR04 ultrasonic sensor** and publish `sensor_msgs/msg/Range` to the ROS2 topic `/ultrasonic/range` via **micro-ROS over USB Serial**.
+This directory contains the Arduino sketch that runs on the **ESP32** to read an **HC-SR04 ultrasonic sensor** and publish `sensor_msgs/msg/Range` to the ROS2 topic `ultrasonic/range` via **micro-ROS over USB Serial**.
 
 ---
 
@@ -147,7 +147,7 @@ ros2 node list
 # Expected: /esp32_ultrasonic
 
 # Terminal 3: Echo raw data
-ros2 topic echo /ultrasonic/range
+ros2 topic echo ultrasonic/range
 
 # Terminal 4: Run the SWARM-X listener
 ros2 run my_robot ultrasonic_listener

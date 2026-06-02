@@ -6,11 +6,11 @@
 robot.launch.py — Core SWARM-X Robot Stack (Raspberry Pi)
 
 Nodes started:
-    1. motor_controller    — /cmd_vel -> L298N GPIO PWM
-    2. obstacle_avoider    — /scan + /ultrasonic/status + /ir/temperature -> /cmd_vel
-    3. ultrasonic_listener — ESP32 micro-ROS -> /ultrasonic/status
-    4. ir_sensor_node      — MLX90614 I2C -> /ir/temperature + /ir/ambient
-    5. odometry_node       — /cmd_vel integration -> /odom + TF
+    1. motor_controller    — cmd_vel -> L298N GPIO PWM
+    2. obstacle_avoider    — scan + ultrasonic/status + ir/temperature -> cmd_vel
+    3. ultrasonic_listener — ESP32 micro-ROS -> ultrasonic/status
+    4. ir_sensor_node      — MLX90614 I2C -> ir/temperature + ir/ambient
+    5. odometry_node       — cmd_vel integration -> odom + TF
 
 All parameters can be overridden from the command line, e.g.:
     ros2 launch my_robot robot.launch.py forward_speed:=0.15 ir_warn_temp:=38.0

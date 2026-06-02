@@ -26,7 +26,7 @@ setup(
     zip_safe=True,
     maintainer='dilip',
     maintainer_email='dilip@todo.todo',
-    description='SWARM-X ROS2 — full robot stack: motors, lidar, ultrasonic, odometry, SLAM, Nav2',
+    description='SWARM-X ROS2 — single-robot stack: LiDAR, HC-SR04, MLX90614, MPU6050, L298N, SLAM, Nav2',
     license='Apache-2.0',
     tests_require=['pytest'],
 
@@ -34,33 +34,33 @@ setup(
     # This is how ROS2 discovers your nodes.
     # Format:  'executable_name = package.module:function'
     #
-    # After building, you can run:
-    #   ros2 run my_robot swarm_publisher
-    #   ros2 run my_robot swarm_subscriber
-    #   ros2 run my_robot swarm_multi_publisher
-    #   ros2 run my_robot chatter_publisher
+    # After building, you can run any production node:
+    #   ros2 run my_robot motor_controller
+    #   ros2 run my_robot obstacle_avoider
+    #   ros2 run my_robot ir_sensor_node
+    #   ros2 run my_robot imu_node
     #   ros2 run my_robot ultrasonic_listener
     # ──────────────────────────────────────────────────────────────
     entry_points={
         'console_scripts': [
-            # ── Swarm communication ─────────────────────────────────
-            'swarm_publisher       = my_robot.swarm_publisher:main',
-            'swarm_subscriber      = my_robot.swarm_subscriber:main',
-            'swarm_multi_publisher = my_robot.swarm_multi_publisher:main',
-            'chatter_publisher     = my_robot.chatter_publisher:main',
-            # ── Hardware nodes ──────────────────────────────────────
+            # ── Production nodes (active robot pipeline) ────────────
             'motor_controller      = my_robot.motor_controller:main',
             'obstacle_avoider      = my_robot.obstacle_avoider:main',
             'ultrasonic_listener   = my_robot.ultrasonic_listener:main',
-            'ultrasonic_simulator  = my_robot.ultrasonic_simulator:main',
-            # ── New sensor nodes ────────────────────────────────────
-            'thermal_node          = my_robot.thermal_node:main',
+            'ir_sensor_node        = my_robot.ir_sensor_node:main',
             'imu_node              = my_robot.imu_node:main',
-            'battery_monitor       = my_robot.battery_monitor:main',
-            'system_monitor        = my_robot.system_monitor:main',
-            # ── Odometry & diagnostics ─────────────────────────────
             'odometry_node         = my_robot.odometry_node:main',
             'diagnostics_node      = my_robot.diagnostics_node:main',
+            'system_monitor        = my_robot.system_monitor:main',
+            'battery_monitor       = my_robot.battery_monitor:main',
+            # ── Demo / test utilities (not part of robot pipeline) ──
+            'chatter_publisher     = my_robot.chatter_publisher:main',
+            'ultrasonic_simulator  = my_robot.ultrasonic_simulator:main',
+            'swarm_publisher       = my_robot.swarm_publisher:main',
+            'swarm_subscriber      = my_robot.swarm_subscriber:main',
+            'swarm_multi_publisher = my_robot.swarm_multi_publisher:main',
+            # ── Future (AMG8833 thermal camera) ─────────────────────
+            'thermal_node          = my_robot.thermal_node:main',
         ],
     },
 )

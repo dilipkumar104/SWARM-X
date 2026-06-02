@@ -8,8 +8,8 @@ ir_sensor_node.py — MLX90614 IR Thermal Sensor Node
 Reads ambient and object temperature from an MLX90614 sensor over I2C
 and publishes them on:
 
-    /ir/temperature   (sensor_msgs/Temperature) — object temperature [°C]
-    /ir/ambient       (sensor_msgs/Temperature) — ambient temperature [°C]
+    ir/temperature   (sensor_msgs/Temperature) — object temperature [°C]
+    ir/ambient       (sensor_msgs/Temperature) — ambient temperature [°C]
 
 Wiring (Raspberry Pi):
     MLX90614 VCC  -> 3.3 V  (Pin 1)
@@ -74,8 +74,8 @@ class IRSensorNode(Node):
         self._sensor = self._init_sensor()
 
         # ── Publishers ───────────────────────────────────────────────────────
-        self._pub_obj = self.create_publisher(Temperature, '/ir/temperature', 10)
-        self._pub_amb = self.create_publisher(Temperature, '/ir/ambient',     10)
+        self._pub_obj = self.create_publisher(Temperature, 'ir/temperature', 10)
+        self._pub_amb = self.create_publisher(Temperature, 'ir/ambient',     10)
 
         # ── Timer — poll at publish_hz (default 5 Hz to keep Pi load low) ───
         self.create_timer(1.0 / hz, self._publish_temperatures)
@@ -95,10 +95,10 @@ class IRSensorNode(Node):
         try:
             i2c = busio.I2C(board.SCL, board.SDA)
             addr = self.get_parameter('i2c_address').value
+            bus_num = self.get_parameter('i2c_bus').value
             sensor = adafruit_mlx90614.MLX90614(i2c, address=addr)
             self.get_logger().info(
-                f'MLX90614 connected on I2C bus '
-                f'{self.get_parameter("i2c_bus").value} '
+                f'MLX90614 connected on I2C bus {bus_num} '
                 f'addr=0x{addr:02X}')
             return sensor
         except Exception as e:

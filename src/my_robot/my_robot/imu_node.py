@@ -5,22 +5,31 @@
 """
 imu_node.py — MPU6050 IMU Node
 
-Reads roll, pitch, yaw from an MPU6050 via I2C and publishes:
-    /imu/data   (sensor_msgs/Imu)    — full quaternion + angular velocity + linear accel
-    /imu/euler  (std_msgs/String)    — JSON {roll, pitch, yaw} in degrees (easy to read)
+Reads roll, pitch, yaw from an MPU6050 6-axis IMU via I2C and publishes:
+    imu/data   (sensor_msgs/Imu)    — full quaternion + angular velocity + linear accel
+    imu/euler  (std_msgs/String)    — JSON {roll, pitch, yaw} in degrees
 
-Hardware wiring (MPU6050 → Raspberry Pi):
-    VCC  → 3.3V (pin 1)
-    GND  → GND  (pin 6)
-    SDA  → GPIO 2 (pin 3)  — shared I2C bus with AMG8833 (both are 0x68 / 0x69)
-    SCL  → GPIO 3 (pin 5)
-    AD0  → GND  → I2C address 0x68  (if AMG8833 also on bus, set AD0 HIGH → 0x69)
+Hardware wiring (MPU6050 -> Raspberry Pi):
+    VCC  -> 3.3V (pin 1)
+    GND  -> GND  (pin 6)
+    SDA  -> GPIO 2 (pin 3)  — shared I2C bus
+    SCL  -> GPIO 3 (pin 5)
+    AD0  -> GND  -> I2C address 0x68
+
+IMPORTANT — YAW DRIFT:
+    The MPU6050 has NO magnetometer. Yaw is computed by pure gyroscope
+    integration and WILL DRIFT over time (typically 1-5 deg/min). Roll
+    and pitch are corrected via accelerometer in a complementary filter,
+    but yaw has no absolute reference. This is an inherent hardware
+    limitation — not a software bug. For drift-free heading, add a
+    magnetometer (e.g., QMC5883L) or use LiDAR-based SLAM heading.
 
 Without hardware: runs in simulator mode (sinusoidal tilt).
 """
 
 import json
 import math
+import random
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
@@ -174,7 +183,6 @@ class ImuNode(Node):
         return self._roll, self._pitch, self._yaw, ax, ay, az, gx, gy, gz
 
     def _simulate(self):
-        import random
         self._sim_t += 0.05
         roll  = 3.0 * math.sin(self._sim_t * 0.7) + random.uniform(-0.2, 0.2)
         pitch = 2.0 * math.cos(self._sim_t * 0.5) + random.uniform(-0.2, 0.2)

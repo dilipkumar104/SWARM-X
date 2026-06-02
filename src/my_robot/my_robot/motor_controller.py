@@ -5,7 +5,7 @@
 """
 motor_controller.py — L298N Dual H-Bridge Motor Controller
 
-Subscribes to /cmd_vel (geometry_msgs/Twist) and drives four DC motors
+Subscribes to cmd_vel (geometry_msgs/Twist) and drives four DC motors
 in a differential-drive layout.
 
 Wiring (BCM numbering):
@@ -90,7 +90,7 @@ class MotorController(Node):
         self._init_gpio()
 
         self._sub = self.create_subscription(
-            Twist, '/cmd_vel', self._cmd_vel_callback, 10)
+            Twist, 'cmd_vel', self._cmd_vel_callback, 10)
 
         self._last_msg_time = self.get_clock().now()
         self._watchdog = self.create_timer(
@@ -158,7 +158,7 @@ class MotorController(Node):
         if elapsed > self._hb_timeout:
             # throttle_duration_sec avoids flooding the log on repeated timeouts
             self.get_logger().warn(
-                f'No /cmd_vel for {elapsed:.1f}s — stopping motors',
+                f'No cmd_vel for {elapsed:.1f}s — stopping motors',
                 throttle_duration_sec=2.0)
             self._stop_all()
 

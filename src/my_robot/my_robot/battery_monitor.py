@@ -149,8 +149,9 @@ class BatteryMonitor(Node):
         return max(0.0, min(100.0, pct))
 
     def _voltage_to_state(self, v: float) -> str:
-        if v >= VOLTAGE_OK:   return 'FULL' if v >= VOLTAGE_FULL else 'OK'
-        if v >= self._v_low:  return 'LOW'
+        if v >= self._v_full:  return 'FULL'
+        if v >= VOLTAGE_OK:    return 'OK'
+        if v >= self._v_low:   return 'LOW'
         return 'CRITICAL'
 
 

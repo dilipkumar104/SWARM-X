@@ -187,6 +187,42 @@ def generate_launch_description():
         emulate_tty=True,
     )
 
+    # 6. IR Sensor (MLX90614) — thermal survivor detection
+    ir_node = Node(
+        package='my_robot',
+        executable='ir_sensor_node',
+        name='ir_sensor_node',
+        output='screen',
+        emulate_tty=True,
+    )
+
+    # 7. IMU (MPU6050) — orientation data
+    imu_node = Node(
+        package='my_robot',
+        executable='imu_node',
+        name='imu_node',
+        output='screen',
+        emulate_tty=True,
+    )
+
+    # 8. Battery Monitor — voltage tracking
+    battery_node = Node(
+        package='my_robot',
+        executable='battery_monitor',
+        name='battery_monitor',
+        output='screen',
+        emulate_tty=True,
+    )
+
+    # 9. System Monitor — CPU/RAM/temp
+    system_node = Node(
+        package='my_robot',
+        executable='system_monitor',
+        name='system_monitor',
+        output='screen',
+        emulate_tty=True,
+    )
+
     # ══════════════════════════════════════════════════════════════════
     #  CONDITIONAL: ESP32 + HC-SR04 (use_esp32:=true)
     # ══════════════════════════════════════════════════════════════════
@@ -279,6 +315,10 @@ def generate_launch_description():
             avoider_node,
             odom_node,
             diag_node,
+            ir_node,
+            imu_node,
+            battery_node,
+            system_node,
 
             # ── Conditional ─────────────────────────────────────────
             micro_ros_agent,
